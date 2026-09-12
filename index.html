@@ -1,0 +1,2048 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>関東 子連れおでかけマップ</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@500;700;900&family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --cream:#FBF7EF; --paper:#FFFDF8; --ink:#2B2620; --ink-soft:#6b6259;
+    --sun:#3E8FB0; --rain:#6B7AA1; --both:#7C9A5B; --yellow:#F4B740; --coral:#E2603A; --line:#E7DFCF;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0; background:var(--cream); color:var(--ink); font-family:'Noto Sans JP',sans-serif; -webkit-font-smoothing:antialiased;}
+  h1,h2,.mark{font-family:'Zen Maru Gothic',sans-serif;}
+
+  header{
+    padding:24px 18px 12px;
+    background:radial-gradient(circle at 88% -10%, #FCE3B8 0%, transparent 45%),
+      radial-gradient(circle at -10% 110%, #CFE3E9 0%, transparent 40%), var(--cream);
+    border-bottom:1px solid var(--line);
+  }
+  header h1{margin:0 0 4px; font-size:21px; font-weight:900; letter-spacing:.02em;}
+  header h1 span{color:var(--coral);}
+  header p{margin:0 0 6px; font-size:12.5px; color:var(--ink-soft); line-height:1.6;}
+  .disclaimer{font-size:10px; color:#8a6a3f; background:#FBF0DC; display:inline-block; padding:4px 10px; border-radius:999px; margin-bottom:4px;}
+  .save-note{font-size:10.5px; color:var(--ink-soft); margin-top:2px;}
+  .save-note button{
+    border:none; background:none; color:var(--sun); font-size:10.5px; font-weight:700;
+    text-decoration:underline; padding:0; cursor:pointer;
+  }
+
+  .filters{position:sticky; top:0; z-index:20; background:var(--paper); border-bottom:2px solid var(--line);}
+  .filters-toggle{
+    display:flex; justify-content:space-between; align-items:center;
+    padding:12px 16px; cursor:pointer; user-select:none;
+  }
+  .filters-toggle .label{font-size:13px; font-weight:700;}
+  .filters-toggle .sub{font-size:11px; color:var(--ink-soft); font-weight:500; margin-left:6px;}
+  .filters-toggle .chev{font-size:11px; color:var(--ink-soft); transition:transform .2s;}
+  .filters-toggle.open .chev{transform:rotate(180deg);}
+  .filters-body{display:none; padding:0 14px 12px;}
+  .filters-body.open{display:block;}
+  .filter-row{margin-bottom:8px;}
+  .filter-row:last-child{margin-bottom:0;}
+  .filter-label{font-size:10.5px; color:var(--ink-soft); margin:0 0 6px 2px; font-weight:700;}
+  .chips{display:flex; gap:6px; overflow-x:auto; padding-bottom:2px; -webkit-overflow-scrolling:touch; scrollbar-width:none;}
+  .chips::-webkit-scrollbar{display:none;}
+  .chip{flex:0 0 auto; padding:7px 13px; border-radius:999px; border:1.5px solid var(--line); background:var(--paper);
+    color:var(--ink); font-size:12.5px; font-weight:500; white-space:nowrap; cursor:pointer; transition:.15s;}
+  .chip.active{background:var(--ink); border-color:var(--ink); color:var(--cream);}
+  .chip.w-sun.active{background:var(--sun); border-color:var(--sun); color:#fff;}
+  .chip.w-rain.active{background:var(--rain); border-color:var(--rain); color:#fff;}
+  .chip.w-both.active{background:var(--both); border-color:var(--both); color:#fff;}
+  .chip.p-yes.active{background:#4F7942; border-color:#4F7942; color:#fff;}
+  .chip.fav.active{background:var(--coral); border-color:var(--coral); color:#fff;}
+
+  .zip-row{display:flex; gap:6px; align-items:center;}
+  .zip-row input{
+    flex:1; min-width:0; padding:8px 10px; border:1.5px solid var(--line); border-radius:8px;
+    font-size:13px; font-family:inherit; background:var(--paper); color:var(--ink);
+  }
+  .zip-row button{
+    flex:0 0 auto; padding:8px 14px; border-radius:8px; border:none; background:var(--sun);
+    color:#fff; font-size:12.5px; font-weight:700; cursor:pointer;
+  }
+  .zip-status{font-size:11px; color:var(--ink-soft); margin-top:5px; min-height:14px;}
+
+  .result-count{padding:10px 16px 0; font-size:12px; color:var(--ink-soft);}
+  .result-count b{color:var(--ink);}
+
+  main{padding:8px 12px 30px;}
+  .region{margin-top:22px;}
+  .region-title{display:flex; align-items:baseline; gap:8px; margin:0 2px 10px;}
+  .region-title h2{font-size:15px; margin:0; font-weight:700;}
+  .region-title .count{font-size:11px; color:var(--ink-soft);}
+
+  .cards{display:flex; flex-direction:column; gap:10px;}
+
+  .card{background:var(--paper); border:1px solid var(--line); border-left:5px solid var(--both);
+    border-radius:10px; padding:14px 14px 12px; position:relative;}
+  .card.w-晴れ{border-left-color:var(--sun);}
+  .card.w-雨{border-left-color:var(--rain);}
+  .card.is-visited{opacity:.6;}
+
+  .card-top{display:flex; justify-content:space-between; align-items:flex-start; gap:8px; margin-bottom:5px;}
+  .card-name{font-size:15px; font-weight:700; line-height:1.4;}
+  .card-area{font-size:11px; color:var(--ink-soft); margin-top:2px;}
+  .card-dist{font-size:10.5px; color:var(--sun); font-weight:700; margin-top:2px;}
+
+  .duration-tag{flex:0 0 auto; font-size:10.5px; font-weight:700; padding:3px 9px; border-radius:999px;
+    background:#F1EADA; color:var(--ink-soft); white-space:nowrap;}
+  .duration-tag.full{background:var(--yellow); color:#5b4009;}
+
+  .card-desc{font-size:12.5px; line-height:1.7; color:var(--ink); margin:6px 0 8px;}
+
+  .tag-row{display:flex; flex-wrap:wrap; gap:5px; margin-bottom:8px;}
+  .tag{font-size:10.5px; padding:3px 8px; border-radius:6px; background:#F1EADA; color:var(--ink-soft); font-weight:500;}
+  .tag.age-hit{background:var(--ink); color:var(--cream);}
+
+  .info-grid{display:flex; flex-direction:column; gap:4px; margin:8px 0; padding:8px 10px; background:#F5F0E4; border-radius:8px;}
+  .info-row{display:flex; gap:6px; font-size:11.5px; color:var(--ink);}
+  .info-row .ico{flex:0 0 auto; width:16px;}
+  .info-row .lbl{flex:0 0 auto; color:var(--ink-soft); width:44px;}
+  .info-row .val{flex:1;}
+
+  .tip{font-size:11.5px; color:#7a5a3a; background:#FBF0DC; border-radius:8px; padding:7px 10px; line-height:1.6; margin-bottom:9px;}
+  .tip b{color:var(--coral);}
+
+  .weather-icons{font-size:12px;}
+
+  .action-row{display:flex; gap:6px; flex-wrap:wrap;}
+  .abtn{
+    flex:0 0 auto; font-size:11px; padding:6px 10px; border-radius:8px; border:1.5px solid var(--line);
+    background:var(--paper); color:var(--ink-soft); cursor:pointer; font-weight:600; text-decoration:none;
+  }
+  .abtn.on{background:var(--coral); border-color:var(--coral); color:#fff;}
+  .abtn.on.visited{background:#4F7942; border-color:#4F7942;}
+  .abtn.on.excluded{background:#8a8378; border-color:#8a8378;}
+  .abtn.link{background:#EFE9DA;}
+
+  .empty{text-align:center; padding:60px 20px; color:var(--ink-soft); font-size:13px;}
+
+  footer{text-align:center; padding:18px 20px 24px; font-size:10px; color:var(--ink-soft); border-top:1px solid var(--line); line-height:1.7;}
+</style>
+</head>
+<body>
+
+<header>
+  <h1><span>関東</span>子連れおでかけマップ</h1>
+  <p>年齢・天気・所要時間・駐車場・自宅からの距離で絞り込んで、週末の行き先をサクッと決める。</p>
+  <span class="disclaimer">※料金・駐車場・設備情報は目安です。訪問前に公式サイトをご確認ください</span>
+  <div class="save-note">⭐お気に入り・行った記録・郵便番号はこの端末（ブラウザ）に自動保存されます　<button id="resetBtn">保存データをリセット</button></div>
+</header>
+
+<div class="filters">
+  <div class="filters-toggle" id="filtersToggle">
+    <div><span class="label">絞り込み条件</span><span class="sub" id="filtersSummary"></span></div>
+    <span class="chev">▼</span>
+  </div>
+  <div class="filters-body" id="filtersBody">
+    <div class="filter-row">
+      <div class="filter-label">年齢でしぼる（複数選択可）</div>
+      <div class="chips" id="ageChips"></div>
+    </div>
+    <div class="filter-row">
+      <div class="filter-label">天気</div>
+      <div class="chips" id="weatherChips"></div>
+    </div>
+    <div class="filter-row">
+      <div class="filter-label">所要時間</div>
+      <div class="chips" id="durationChips"></div>
+    </div>
+    <div class="filter-row">
+      <div class="filter-label">駐車場</div>
+      <div class="chips" id="parkingChips"></div>
+    </div>
+    <div class="filter-row">
+      <div class="filter-label">自宅からの目安（郵便番号を入力）</div>
+      <div class="zip-row">
+        <input type="text" id="zipInput" placeholder="例）100-0001" maxlength="8">
+        <button id="zipBtn">絞り込む</button>
+      </div>
+      <div class="zip-status" id="zipStatus"></div>
+      <div class="chips" id="distChips" style="margin-top:6px; display:none;"></div>
+    </div>
+    <div class="filter-row">
+      <div class="filter-label">表示の絞り込み</div>
+      <div class="chips" id="viewChips"></div>
+    </div>
+  </div>
+</div>
+
+<div class="result-count" id="resultCount"></div>
+
+<main id="main"></main>
+
+<footer>行く前に最新の営業時間・料金・休園日・駐車場状況・設備情報は必ず公式サイトでご確認ください。距離は直線距離からの概算で、実際の道路事情により前後します。</footer>
+
+<script>
+const STORAGE_KEY = "kantoKidsMapV1";
+
+const AGES = ["0-1歳","2-3歳","4-6歳","低学年","高学年"];
+const WEATHERS = [
+  {key:"晴れ", label:"☀️ 晴れの日向き"},
+  {key:"雨", label:"☔ 雨の日でもOK"},
+  {key:"all", label:"どちらでも"}
+];
+const DURATIONS = [
+  {key:"半日", label:"半日"},
+  {key:"1日", label:"1日がっつり"},
+  {key:"all", label:"どちらでも"}
+];
+const PARKINGS = [
+  {key:"yes", label:"🅿️ 駐車場あり"},
+  {key:"no", label:"駐車場なし・少"},
+  {key:"all", label:"どちらでも"}
+];
+const DISTS = [
+  {key:"30", label:"車で約30分以内"},
+  {key:"60", label:"車で約1時間以内"},
+  {key:"all", label:"すべて"}
+];
+const VIEWS = [
+  {key:"favOnly", label:"⭐お気に入りのみ"},
+  {key:"hideVisited", label:"行った場所を隠す"},
+  {key:"showExcluded", label:"除外中を表示"}
+];
+
+// 郵便番号「上3桁」マスタ：入力された7桁の先頭3桁と照合し、代表地点（市区町村レベル）の緯度経度を得る
+// ※3桁単位での概算のため、実際の住所とは多少ズレる場合があります
+const ZIP3_MASTER = [
+{min:100,max:105,lat:35.694,lng:139.753,label:"東京都千代田区"},
+{min:106,max:106,lat:35.66,lng:139.729,label:"東京都港区（南麻布・北青山周辺）"},
+{min:107,max:108,lat:35.645,lng:139.74,label:"東京都港区（三田・高輪周辺）"},
+{min:110,max:111,lat:35.712,lng:139.78,label:"東京都台東区"},
+{min:112,max:113,lat:35.712,lng:139.756,label:"東京都文京区"},
+{min:114,max:115,lat:35.752,lng:139.734,label:"東京都北区"},
+{min:116,max:116,lat:35.736,lng:139.783,label:"東京都荒川区"},
+{min:120,max:123,lat:35.775,lng:139.804,label:"東京都足立区"},
+{min:124,max:125,lat:35.743,lng:139.847,label:"東京都葛飾区"},
+{min:130,max:131,lat:35.71,lng:139.801,label:"東京都墨田区"},
+{min:132,max:134,lat:35.706,lng:139.868,label:"東京都江戸川区"},
+{min:135,max:136,lat:35.673,lng:139.817,label:"東京都江東区"},
+{min:140,max:142,lat:35.609,lng:139.73,label:"東京都品川区"},
+{min:143,max:146,lat:35.561,lng:139.716,label:"東京都大田区"},
+{min:150,max:151,lat:35.661,lng:139.704,label:"東京都渋谷区"},
+{min:152,max:153,lat:35.634,lng:139.698,label:"東京都目黒区"},
+{min:154,max:155,lat:35.643,lng:139.669,label:"東京都世田谷区（三軒茶屋周辺）"},
+{min:156,max:157,lat:35.646,lng:139.628,label:"東京都世田谷区（成城周辺）"},
+{min:158,max:158,lat:35.611,lng:139.641,label:"東京都世田谷区（玉川周辺）"},
+{min:160,max:163,lat:35.693,lng:139.703,label:"東京都新宿区"},
+{min:164,max:165,lat:35.707,lng:139.664,label:"東京都中野区"},
+{min:166,max:168,lat:35.699,lng:139.638,label:"東京都杉並区"},
+{min:169,max:169,lat:35.712,lng:139.703,label:"東京都新宿区（高田馬場周辺）"},
+{min:170,max:171,lat:35.731,lng:139.717,label:"東京都豊島区"},
+{min:173,max:175,lat:35.751,lng:139.709,label:"東京都板橋区"},
+{min:176,max:179,lat:35.736,lng:139.652,label:"東京都練馬区"},
+{min:180,max:180,lat:35.718,lng:139.566,label:"東京都武蔵野市"},
+{min:181,max:181,lat:35.683,lng:139.559,label:"東京都三鷹市"},
+{min:182,max:182,lat:35.651,lng:139.541,label:"東京都調布市"},
+{min:183,max:183,lat:35.669,lng:139.479,label:"東京都府中市"},
+{min:184,max:184,lat:35.699,lng:139.505,label:"東京都小金井市"},
+{min:185,max:186,lat:35.702,lng:139.466,label:"東京都国分寺市・小平市周辺"},
+{min:187,max:187,lat:35.729,lng:139.483,label:"東京都小平市"},
+{min:188,max:188,lat:35.726,lng:139.538,label:"東京都西東京市"},
+{min:189,max:189,lat:35.757,lng:139.469,label:"東京都東村山市"},
+{min:190,max:190,lat:35.698,lng:139.413,label:"東京都立川市"},
+{min:191,max:191,lat:35.674,lng:139.4,label:"東京都日野市"},
+{min:192,max:193,lat:35.656,lng:139.324,label:"東京都八王子市"},
+{min:194,max:195,lat:35.548,lng:139.446,label:"東京都町田市"},
+{min:196,max:196,lat:35.706,lng:139.354,label:"東京都昭島市"},
+{min:197,max:197,lat:35.737,lng:139.328,label:"東京都福生市"},
+{min:198,max:198,lat:35.788,lng:139.276,label:"東京都青梅市"},
+{min:206,max:206,lat:35.636,lng:139.446,label:"東京都多摩市"},
+{min:207,max:207,lat:35.638,lng:139.505,label:"東京都稲城市"},
+{min:208,max:208,lat:35.75,lng:139.408,label:"東京都東大和市・武蔵村山市周辺"},
+{min:210,max:211,lat:35.531,lng:139.703,label:"神奈川県川崎市川崎区・幸区"},
+{min:212,max:213,lat:35.601,lng:139.609,label:"神奈川県川崎市高津区・宮前区"},
+{min:214,max:214,lat:35.619,lng:139.546,label:"神奈川県川崎市多摩区"},
+{min:215,max:216,lat:35.598,lng:139.505,label:"神奈川県川崎市麻生区"},
+{min:220,max:221,lat:35.472,lng:139.628,label:"神奈川県横浜市西区・神奈川区"},
+{min:222,max:223,lat:35.514,lng:139.633,label:"神奈川県横浜市港北区"},
+{min:224,max:224,lat:35.541,lng:139.56,label:"神奈川県横浜市都筑区"},
+{min:225,max:227,lat:35.556,lng:139.526,label:"神奈川県横浜市青葉区"},
+{min:226,max:226,lat:35.517,lng:139.52,label:"神奈川県横浜市緑区"},
+{min:230,max:230,lat:35.508,lng:139.675,label:"神奈川県横浜市鶴見区"},
+{min:231,max:231,lat:35.444,lng:139.638,label:"神奈川県横浜市中区"},
+{min:232,max:232,lat:35.436,lng:139.603,label:"神奈川県横浜市南区"},
+{min:233,max:233,lat:35.399,lng:139.591,label:"神奈川県横浜市港南区"},
+{min:234,max:235,lat:35.409,lng:139.622,label:"神奈川県横浜市磯子区"},
+{min:236,max:236,lat:35.335,lng:139.624,label:"神奈川県横浜市金沢区"},
+{min:238,max:239,lat:35.281,lng:139.672,label:"神奈川県横須賀市・三浦市"},
+{min:240,max:240,lat:35.443,lng:139.582,label:"神奈川県横浜市保土ケ谷区"},
+{min:241,max:241,lat:35.481,lng:139.543,label:"神奈川県横浜市旭区"},
+{min:242,max:242,lat:35.464,lng:139.478,label:"神奈川県横浜市瀬谷区"},
+{min:244,max:244,lat:35.401,lng:139.531,label:"神奈川県横浜市戸塚区"},
+{min:245,max:245,lat:35.406,lng:139.481,label:"神奈川県横浜市泉区"},
+{min:246,max:246,lat:35.365,lng:139.567,label:"神奈川県横浜市栄区"},
+{min:247,max:248,lat:35.319,lng:139.55,label:"神奈川県鎌倉市"},
+{min:249,max:249,lat:35.297,lng:139.579,label:"神奈川県逗子市"},
+{min:250,max:250,lat:35.256,lng:139.153,label:"神奈川県小田原市"},
+{min:251,max:251,lat:35.339,lng:139.489,label:"神奈川県藤沢市"},
+{min:252,max:252,lat:35.487,lng:139.396,label:"神奈川県相模原市・座間市・海老名市周辺"},
+{min:253,max:253,lat:35.333,lng:139.406,label:"神奈川県茅ヶ崎市"},
+{min:254,max:254,lat:35.328,lng:139.343,label:"神奈川県平塚市"},
+{min:255,max:255,lat:35.305,lng:139.275,label:"神奈川県中郡二宮町・大磯町"},
+{min:256,max:256,lat:35.363,lng:139.117,label:"神奈川県足柄上郡"},
+{min:257,max:257,lat:35.372,lng:139.222,label:"神奈川県秦野市"},
+{min:258,max:258,lat:35.371,lng:139.152,label:"神奈川県足柄上郡松田町周辺"},
+{min:259,max:259,lat:35.233,lng:139.107,label:"神奈川県足柄下郡箱根町・湯河原町"},
+{min:330,max:331,lat:35.906,lng:139.624,label:"埼玉県さいたま市大宮区"},
+{min:332,max:334,lat:35.815,lng:139.7,label:"埼玉県川口市・蕨市周辺"},
+{min:335,max:335,lat:35.813,lng:139.679,label:"埼玉県戸田市"},
+{min:336,max:336,lat:35.861,lng:139.646,label:"埼玉県さいたま市南区・浦和区"},
+{min:337,max:337,lat:35.925,lng:139.66,label:"埼玉県さいたま市見沼区"},
+{min:338,max:338,lat:35.887,lng:139.621,label:"埼玉県さいたま市中央区"},
+{min:339,max:339,lat:35.955,lng:139.688,label:"埼玉県さいたま市岩槻区"},
+{min:340,max:340,lat:35.828,lng:139.804,label:"埼玉県草加市"},
+{min:341,max:342,lat:35.833,lng:139.867,label:"埼玉県三郷市・吉川市"},
+{min:343,max:343,lat:35.89,lng:139.79,label:"埼玉県越谷市"},
+{min:344,max:344,lat:35.975,lng:139.754,label:"埼玉県春日部市"},
+{min:345,max:345,lat:36.076,lng:139.735,label:"埼玉県幸手市・杉戸町"},
+{min:346,max:346,lat:36.058,lng:139.669,label:"埼玉県久喜市"},
+{min:347,max:347,lat:36.128,lng:139.601,label:"埼玉県加須市"},
+{min:349,max:349,lat:35.976,lng:139.674,label:"埼玉県蓮田市・白岡市"},
+{min:350,max:350,lat:35.925,lng:139.485,label:"埼玉県川越市"},
+{min:351,max:351,lat:35.799,lng:139.591,label:"埼玉県朝霞市"},
+{min:352,max:352,lat:35.786,lng:139.564,label:"埼玉県新座市"},
+{min:353,max:354,lat:35.833,lng:139.575,label:"埼玉県志木市・富士見市"},
+{min:355,max:355,lat:36.038,lng:139.404,label:"埼玉県東松山市"},
+{min:356,max:356,lat:35.958,lng:139.399,label:"埼玉県ふじみ野市・坂戸市"},
+{min:357,max:357,lat:35.855,lng:139.32,label:"埼玉県飯能市"},
+{min:358,max:358,lat:35.837,lng:139.393,label:"埼玉県入間市"},
+{min:359,max:359,lat:35.799,lng:139.469,label:"埼玉県所沢市"},
+{min:360,max:360,lat:36.147,lng:139.389,label:"埼玉県熊谷市"},
+{min:361,max:361,lat:36.14,lng:139.459,label:"埼玉県行田市"},
+{min:362,max:362,lat:35.977,lng:139.591,label:"埼玉県上尾市"},
+{min:363,max:363,lat:36.0,lng:139.588,label:"埼玉県桶川市・北本市"},
+{min:364,max:364,lat:36.052,lng:139.532,label:"埼玉県鴻巣市"},
+{min:366,max:366,lat:36.198,lng:139.284,label:"埼玉県深谷市"},
+{min:367,max:367,lat:36.239,lng:139.192,label:"埼玉県本庄市"},
+{min:368,max:368,lat:35.995,lng:139.086,label:"埼玉県秩父市"},
+{min:369,max:369,lat:36.111,lng:139.198,label:"埼玉県大里郡寄居町"},
+{min:260,max:261,lat:35.607,lng:140.106,label:"千葉県千葉市中央区"},
+{min:262,max:262,lat:35.664,lng:140.093,label:"千葉県千葉市花見川区"},
+{min:263,max:263,lat:35.632,lng:140.113,label:"千葉県千葉市稲毛区"},
+{min:264,max:264,lat:35.618,lng:140.161,label:"千葉県千葉市若葉区"},
+{min:265,max:265,lat:35.567,lng:140.161,label:"千葉県千葉市緑区"},
+{min:266,max:266,lat:35.638,lng:140.045,label:"千葉県千葉市美浜区"},
+{min:270,max:271,lat:35.788,lng:139.9,label:"千葉県松戸市"},
+{min:272,max:272,lat:35.719,lng:139.93,label:"千葉県市川市"},
+{min:273,max:274,lat:35.695,lng:139.983,label:"千葉県船橋市"},
+{min:275,max:275,lat:35.671,lng:140.024,label:"千葉県習志野市"},
+{min:276,max:276,lat:35.729,lng:140.101,label:"千葉県八千代市"},
+{min:277,max:277,lat:35.858,lng:139.976,label:"千葉県柏市"},
+{min:278,max:278,lat:35.96,lng:139.876,label:"千葉県野田市"},
+{min:279,max:279,lat:35.652,lng:139.902,label:"千葉県浦安市"},
+{min:283,max:283,lat:35.554,lng:140.365,label:"千葉県東金市"},
+{min:285,max:285,lat:35.723,lng:140.223,label:"千葉県佐倉市・四街道市"},
+{min:286,max:286,lat:35.776,lng:140.318,label:"千葉県成田市"},
+{min:287,max:287,lat:35.895,lng:140.5,label:"千葉県香取市"},
+{min:288,max:288,lat:35.735,lng:140.827,label:"千葉県銚子市"},
+{min:289,max:289,lat:35.706,lng:140.65,label:"千葉県旭市・匝瑳市"},
+{min:290,max:290,lat:35.498,lng:140.112,label:"千葉県市原市"},
+{min:292,max:292,lat:35.376,lng:139.926,label:"千葉県木更津市"},
+{min:293,max:293,lat:35.303,lng:139.856,label:"千葉県富津市"},
+{min:294,max:294,lat:34.996,lng:139.87,label:"千葉県館山市"},
+{min:296,max:296,lat:35.111,lng:140.1,label:"千葉県鴨川市"},
+{min:297,max:297,lat:35.425,lng:140.288,label:"千葉県茂原市"},
+{min:298,max:298,lat:35.245,lng:140.393,label:"千葉県いすみ市"},
+{min:299,max:299,lat:35.418,lng:139.996,label:"千葉県袖ケ浦市・君津市"},
+{min:300,max:301,lat:36.083,lng:140.198,label:"茨城県土浦市・稲敷郡阿見町"},
+{min:302,max:302,lat:35.913,lng:140.052,label:"茨城県取手市"},
+{min:303,max:303,lat:36.098,lng:139.76,label:"茨城県猿島郡境町周辺"},
+{min:305,max:305,lat:36.083,lng:140.076,label:"茨城県つくば市"},
+{min:306,max:306,lat:36.18,lng:139.752,label:"茨城県古河市"},
+{min:307,max:307,lat:36.303,lng:139.877,label:"茨城県結城市"},
+{min:308,max:308,lat:36.307,lng:139.978,label:"茨城県筑西市"},
+{min:309,max:309,lat:36.322,lng:140.129,label:"茨城県桜川市"},
+{min:310,max:311,lat:36.365,lng:140.472,label:"茨城県水戸市"},
+{min:312,max:312,lat:36.396,lng:140.542,label:"茨城県ひたちなか市"},
+{min:313,max:313,lat:36.536,lng:140.531,label:"茨城県常陸太田市"},
+{min:314,max:314,lat:35.965,lng:140.645,label:"茨城県鹿嶋市"},
+{min:315,max:315,lat:36.191,lng:140.283,label:"茨城県石岡市"},
+{min:316,max:316,lat:36.599,lng:140.651,label:"茨城県日立市"},
+{min:317,max:317,lat:36.548,lng:140.408,label:"茨城県常陸大宮市"},
+{min:318,max:319,lat:36.716,lng:140.712,label:"茨城県高萩市・北茨城市"},
+{min:320,max:321,lat:36.566,lng:139.884,label:"栃木県宇都宮市"},
+{min:322,max:322,lat:36.56,lng:139.744,label:"栃木県鹿沼市"},
+{min:323,max:323,lat:36.315,lng:139.8,label:"栃木県小山市"},
+{min:324,max:324,lat:36.867,lng:140.02,label:"栃木県大田原市"},
+{min:325,max:325,lat:36.966,lng:140.058,label:"栃木県那須塩原市"},
+{min:326,max:326,lat:36.34,lng:139.448,label:"栃木県足利市"},
+{min:327,max:327,lat:36.315,lng:139.578,label:"栃木県佐野市"},
+{min:328,max:328,lat:36.383,lng:139.729,label:"栃木県栃木市"},
+{min:329,max:329,lat:37.03,lng:140.115,label:"栃木県那須郡那須町"},
+{min:370,max:370,lat:36.322,lng:139.01,label:"群馬県高崎市"},
+{min:371,max:371,lat:36.391,lng:139.06,label:"群馬県前橋市"},
+{min:372,max:372,lat:36.311,lng:139.196,label:"群馬県伊勢崎市"},
+{min:373,max:373,lat:36.291,lng:139.376,label:"群馬県太田市"},
+{min:374,max:374,lat:36.246,lng:139.539,label:"群馬県館林市"},
+{min:375,max:375,lat:36.253,lng:139.073,label:"群馬県藤岡市"},
+{min:376,max:376,lat:36.408,lng:139.33,label:"群馬県桐生市"},
+{min:377,max:377,lat:36.489,lng:138.996,label:"群馬県渋川市・吾妻郡周辺"},
+{min:378,max:378,lat:36.641,lng:139.045,label:"群馬県沼田市"},
+{min:379,max:379,lat:36.617,lng:138.596,label:"群馬県吾妻郡（草津等）"},
+];
+
+function lookupZip3(code3){
+  const n = parseInt(code3, 10);
+  for(const r of ZIP3_MASTER){
+    if(n >= r.min && n <= r.max) return r;
+  }
+  return null;
+}
+
+const SPOTS = [
+{region:"東京", name:"上野動物園", area:"台東区・上野公園", lat:35.7160, lng:139.7712,
+ ages:["2-3歳","4-6歳","低学年","高学年"], weather:["晴れ"], duration:["半日","1日"],
+ price:"大人600円／中学生以下 無料", parking:"no", access:"JR「上野」駅から徒歩5分",
+ baby:"おむつ替え・授乳室あり／ベビーカーOK（一部坂道）", lunch:"園内に売店・軽食あり。不忍池周辺にも飲食店多数。",
+ officialUrl:"https://www.tokyo-zoo.net/zoo/ueno/",
+ desc:"パンダ目当てで混みやすいが、園内は広く動物の種類も豊富。ベビーカーで回れる坂道多め。",
+ tip:"開園直後に入るとパンダ待ち行列を回避しやすい。"},
+{region:"東京", name:"サンシャイン水族館", area:"豊島区・池袋", lat:35.7295, lng:139.7191,
+ ages:["0-1歳","2-3歳","4-6歳","低学年","高学年"], weather:["晴れ","雨"], duration:["半日"],
+ price:"大人2600円台／子供1300円台", parking:"yes", access:"東京メトロ「池袋」駅から徒歩10分",
+ baby:"授乳室・おむつ替えあり／ベビーカーOK", lunch:"サンシャインシティ内にフードコート・レストラン多数。",
+ officialUrl:"https://sunshinecity.jp/aquarium/",
+ desc:"ビルの屋上という立地で、天候に左右されず楽しめる都会型水族館。ペンギンの空飛ぶ姿が名物。",
+ tip:"授乳室・おむつ替えスペースあり。ベビーカーOK。"},
+{region:"東京", name:"すみだ水族館", area:"墨田区・東京スカイツリータウン", lat:35.7101, lng:139.8107,
+ ages:["0-1歳","2-3歳","4-6歳","低学年"], weather:["晴れ","雨"], duration:["半日"],
+ price:"大人2500円台／子供1300円台", parking:"yes", access:"東武線「とうきょうスカイツリー」駅すぐ",
+ baby:"授乳室・おむつ替えあり／ベビーカーOK", lunch:"スカイツリータウン内に飲食店・フードコート多数。",
+ officialUrl:"https://www.sumida-aquarium.com/",
+ desc:"スカイツリー直結。照明が落ち着いていて、人混みが苦手な乳幼児連れでも過ごしやすい。",
+ tip:"クラゲ水槽前は座って眺められるベンチあり、休憩にも◎。"},
+{region:"東京", name:"キッザニア東京", area:"江東区・豊洲", lat:35.6547, lng:139.7960,
+ ages:["4-6歳","低学年","高学年"], weather:["晴れ","雨"], duration:["1日"],
+ price:"時間帯・年齢により4000〜6000円台", parking:"yes", access:"ゆりかもめ「豊洲」駅から徒歩1分",
+ baby:"授乳室あり／対象年齢が3歳〜のためベビーカー利用は少なめ", lunch:"館内にパビリオン内カフェあり。豊洲市場・ららぽーとも近い。",
+ officialUrl:"https://www.kidzania.jp/tokyo/",
+ desc:"約100種のお仕事・社会体験ができる屋内型施設。時間入れ替え制で1日がっつり滞在するタイプ。",
+ tip:"人気の予約は争奪戦。開始直後の枠を狙うのがコツ。"},
+{region:"東京", name:"レゴランド・ディスカバリーセンター東京", area:"港区・お台場", lat:35.6260, lng:139.7756,
+ ages:["2-3歳","4-6歳","低学年"], weather:["晴れ","雨"], duration:["半日"],
+ price:"2000〜3000円台（日時指定）", parking:"yes", access:"ゆりかもめ「台場」駅から徒歩3分",
+ baby:"おむつ替えあり／ベビーカーOK", lunch:"併設デックス東京ビーチ内に飲食店多数。",
+ officialUrl:"https://tokyo.legolanddiscoverycenter.jp/",
+ desc:"レゴブロックづくしの屋内施設。4Dシネマや小さめのライド系アトラクションもある。",
+ tip:"大人だけの入場は不可、子ども同伴が条件。"},
+{region:"東京", name:"国立科学博物館", area:"台東区・上野公園", lat:35.7161, lng:139.7745,
+ ages:["低学年","高学年"], weather:["晴れ","雨"], duration:["半日","1日"],
+ price:"大人630円／高校生以下 無料", parking:"no", access:"JR「上野」駅から徒歩5分",
+ baby:"おむつ替え・授乳室あり", lunch:"館内レストランあり。上野公園周辺にも飲食店多数。",
+ officialUrl:"https://www.kahaku.go.jp/",
+ desc:"恐竜の骨格標本から宇宙・人体まで、展示のスケールが大きい。じっくり読む子は1日でも足りない。",
+ tip:"未就学児にはやや文字情報が多め。シアター360は整理券制。"},
+{region:"東京", name:"葛西臨海公園・水族園", area:"江戸川区", lat:35.6417, lng:139.8590,
+ ages:["0-1歳","2-3歳","4-6歳","低学年","高学年"], weather:["晴れ"], duration:["半日","1日"],
+ price:"公園無料／水族園 大人700円・中学生以下無料", parking:"yes", access:"JR「葛西臨海公園」駅から徒歩5分",
+ baby:"おむつ替え・授乳室あり／ベビーカーOK", lunch:"園内レストハウスあり。芝生でお弁当を広げる家族も多い。",
+ officialUrl:"https://www.tokyo-zoo.net/zoo/kasai/",
+ desc:"大観覧車、広い芝生の公園、マグロが回遊する水族園が一体になったエリア。",
+ tip:"公園部分は日陰が少なめ。夏は帽子・水分を多めに。"},
+{region:"東京", name:"国営昭和記念公園", area:"立川市", lat:35.7059, lng:139.4103,
+ ages:["0-1歳","2-3歳","4-6歳","低学年","高学年"], weather:["晴れ"], duration:["1日"],
+ price:"大人450円／中学生以下 無料（別途遊具・自転車代）", parking:"yes", access:"JR「立川」駅から徒歩10分",
+ baby:"おむつ替え・授乳室あり／ベビーカーOK", lunch:"園内にレストラン・売店多数。芝生広場でのピクニックも人気。",
+ officialUrl:"https://www.showakinen-koen.jp/",
+ desc:"広大な芝生広場、じゃぶじゃぶ池、大型遊具のある「みんなの原っぱ」まで揃う総合公園。",
+ tip:"レンタサイクルで園内を回ると小学生も飽きずに1日過ごせる。"},
+{region:"東京", name:"サンリオピューロランド", area:"多摩市", lat:35.6338, lng:139.4467,
+ ages:["0-1歳","2-3歳","4-6歳","低学年"], weather:["晴れ","雨"], duration:["半日","1日"],
+ price:"日時・年齢により3000〜4000円台", parking:"yes", access:"京王・小田急・多摩モノレール「多摩センター」駅から徒歩5分",
+ baby:"授乳室・調乳スペース充実／ベビーカーOK", lunch:"館内にキャラクターカフェ・フードコートあり。",
+ officialUrl:"https://puroland.sanrio.co.jp/",
+ desc:"屋内型テーマパークなので天気の心配が要らない。パレードやふれあいが中心で乗り物は少なめ。",
+ tip:"授乳室・調乳スペースが充実しており乳児連れにもやさしい。"},
+{region:"東京", name:"よみうりランド", area:"稲城市・川崎市にまたがる", lat:35.6197, lng:139.5079,
+ ages:["2-3歳","4-6歳","低学年","高学年"], weather:["晴れ"], duration:["1日"],
+ price:"入園1800円台＋乗り物フリーパス3600円台〜", parking:"yes", access:"京王線「京王よみうりランド」駅からゴンドラ",
+ baby:"おむつ替えあり／ベビーカーOK（園内起伏あり）", lunch:"園内にフードコート・レストラン複数あり。",
+ officialUrl:"https://www.yomiuriland.com/",
+ desc:"未就学児向けの緩やかな乗り物から絶叫系まで揃う遊園地。プールやイルミも季節ごとに展開。",
+ tip:"「グッジョバ」エリアは体を動かすアトラクションが多く小学生に人気。"},
+{region:"東京", name:"多摩動物公園", area:"日野市", lat:35.6499, lng:139.4116,
+ ages:["2-3歳","4-6歳","低学年","高学年"], weather:["晴れ"], duration:["1日"],
+ price:"大人600円／中学生以下 無料", parking:"yes", access:"京王線「多摩動物公園」駅から徒歩1分",
+ baby:"おむつ替えあり／ベビーカー可（一部急坂は注意）", lunch:"園内にレストラン・売店あり。",
+ officialUrl:"https://www.tokyo-zoo.net/zoo/tama/",
+ desc:"ライオンバスやアフリカ園など、上野より広々とゆったり見て回れる動物園。",
+ tip:"起伏があるのでベビーカーより抱っこ紐が楽な区間も。"},
+{region:"東京", name:"鉄道博物館", area:"さいたま市大宮（東京から30分圏）", lat:35.9061, lng:139.6330,
+ ages:["2-3歳","4-6歳","低学年","高学年"], weather:["晴れ","雨"], duration:["半日","1日"],
+ price:"大人1600円台／子供600円台", parking:"no", access:"ニューシャトル「鉄道博物館」駅から徒歩1分",
+ baby:"おむつ替え・授乳室あり／ベビーカーOK", lunch:"館内にレストラン・フードコートあり。",
+ officialUrl:"https://www.railway-museum.jp/",
+ desc:"実物車両の展示に加え、運転シミュレータや模型ジオラマも充実。電車好きなら1日いける。",
+ tip:"シミュレータは有料・整理券制。到着したらまず確保を。"},
+{region:"東京", name:"ハリー・ポッター スタジオツアー東京", area:"練馬区（としまえん跡地）", lat:35.7469, lng:139.6535,
+ ages:["高学年"], weather:["晴れ","雨"], duration:["1日"],
+ price:"日時・年齢により7000円前後〜", parking:"no", access:"西武線「豊島園」駅から徒歩1分",
+ baby:"おむつ替えあり／小さい子には長時間向き", lunch:"館内にカフェ・グレートホール風レストランあり。",
+ officialUrl:"https://www.wbstudiotour.jp/",
+ desc:"映画の撮影セットや衣装を巡る没入型施設。原作を知っている小学校高学年〜が楽しめる内容。",
+ tip:"未就学児にはやや退屈な場合あり。事前に日時指定チケットが必須。"},
+{region:"東京", name:"代々木公園", area:"渋谷区", lat:35.6702, lng:139.6944,
+ ages:["0-1歳","2-3歳","4-6歳","低学年","高学年"], weather:["晴れ"], duration:["半日"],
+ price:"入園無料", parking:"yes", access:"JR・地下鉄「原宿」「代々木公園」駅から徒歩3分",
+ baby:"おむつ替えトイレあり／ベビーカーOK（芝生エリアは不向き）", lunch:"公園周辺の原宿・代々木エリアに飲食店多数。売店は限定的。",
+ officialUrl:"https://www.tokyo-park.or.jp/park/yoyogi/",
+ desc:"広い芝生と大きな遊具広場がある都心のオアシス。散歩やピクニックにも定番。",
+ tip:"週末はイベントで混むことも。遊具広場は午前中が比較的すいている。"},
+{region:"東京", name:"光が丘公園", area:"練馬区", lat:35.7616, lng:139.6217,
+ ages:["0-1歳","2-3歳","4-6歳","低学年","高学年"], weather:["晴れ"], duration:["半日"],
+ price:"入園無料", parking:"yes", access:"都営大江戸線「光が丘」駅から徒歩5分",
+ baby:"おむつ替えトイレあり／ベビーカーOK", lunch:"公園内に軽食店あり。IMAショッピングセンターも隣接。",
+ officialUrl:"https://www.tokyo-park.or.jp/park/hikarigaoka/",
+ desc:"大型のアスレチック遊具とバードサンクチュアリがある広々とした公園。",
+ tip:"遊具エリアは年齢別にゾーニングされていて小さい子でも安心。"},
+{region:"東京", name:"舎人公園", area:"足立区", lat:35.7857, lng:139.7969,
+ ages:["0-1歳","2-3歳","4-6歳","低学年"], weather:["晴れ"], duration:["半日"],
+ price:"入園無料（ミニ遊園地は乗り物ごとに有料）", parking:"yes", access:"日暮里・舎人ライナー「舎人公園」駅から徒歩3分",
+ baby:"おむつ替えトイレあり／ベビーカーOK", lunch:"園内に売店あり。近隣にファミレス・コンビニあり。",
+ officialUrl:"https://www.tokyo-park.or.jp/park/toneri/",
+ desc:"広い芝生に加え、観覧車やミニ列車などの小さな遊園地エリアもある公園。",
+ tip:"ミニ遊園地は未就学児に大人気。夏は水遊び場も開放される。"},
+{region:"埼玉", name:"国営武蔵丘陵森林公園", area:"滑川町", lat:36.0567, lng:139.3853,
+ ages:["0-1歳","2-3歳","4-6歳","低学年","高学年"], weather:["晴れ"], duration:["1日"],
+ price:"大人450円／中学生以下 無料", parking:"yes", access:"東武東上線「森林公園」駅からバス15分",
+ baby:"おむつ替え・授乳室あり／ベビーカーOK", lunch:"園内にレストラン・売店複数あり。",
+ officialUrl:"https://www.shinrinkoen.jp/",
+ desc:"広さ日本有数の国営公園。大型アスレチック遊具やサイクリングコースがあり体を動かし放題。",
+ tip:"園内が広いのでレンタサイクル利用が移動の鍵。"},
+{region:"埼玉", name:"東武動物公園", area:"宮代町", lat:36.0011, lng:139.7256,
+ ages:["0-1歳","2-3歳","4-6歳","低学年","高学年"], weather:["晴れ","雨"], duration:["1日"],
+ price:"入園大人2000円台（プール・アトラクション別途あり）", parking:"yes", access:"東武線「東武動物公園」駅からバス5分",
+ baby:"おむつ替え・授乳室あり／ベビーカーOK", lunch:"園内にレストラン・フードコート多数。",
+ officialUrl:"https://www.tobuzoo.com/",
+ desc:"動物園と遊園地とプールが一体化した複合施設。屋内エリアもあるため小雨でも遊べる部分あり。",
+ tip:"夏はプール、冬はイルミネーションと季節ごとに顔が変わる。"},
+{region:"埼玉", name:"大宮公園", area:"さいたま市大宮区", lat:35.9142, lng:139.6323,
+ ages:["0-1歳","2-3歳","4-6歳","低学年"], weather:["晴れ"], duration:["半日"],
+ price:"入園無料（小動物園は無料、遊園地は乗り物ごとに有料）", parking:"yes", access:"JR「大宮」駅から徒歩12分／東武アーバンパークライン「大宮公園」駅から徒歩5分",
+ baby:"おむつ替えトイレあり／ベビーカーOK", lunch:"園内に売店あり。大宮駅周辺にも飲食店多数。",
+ officialUrl:null,
+ desc:"小さな無料動物園とミニ遊園地、桜並木がそろうファミリー向けの公園。",
+ tip:"小動物園は無料だが規模は小さめ、半日プランの一部として組み合わせるのがおすすめ。"},
+{region:"埼玉", name:"智光山公園こども動物園", area:"狭山市", lat:35.8531, lng:139.4067,
+ ages:["0-1歳","2-3歳","4-6歳","低学年"], weather:["晴れ"], duration:["半日"],
+ price:"こども動物園 大人410円程度／子供無料〜低額", parking:"yes", access:"西武新宿線「狭山市」駅からバス約15分",
+ baby:"おむつ替えあり／ベビーカーOK", lunch:"園内に軽食店あり。周辺は住宅街のため飲食店は少なめ。",
+ officialUrl:null,
+ desc:"ふれあい体験ができる小さな動物園と、遊具・水辺のある広い公園がセットになったエリア。",
+ tip:"ふれあいコーナーは幼児の一番人気。空いていて回りやすい。"},
+{region:"神奈川", name:"横浜・八景島シーパラダイス", area:"横浜市金沢区", lat:35.3346, lng:139.6440,
+ ages:["0-1歳","2-3歳","4-6歳","低学年","高学年"], weather:["晴れ","雨"], duration:["1日"],
+ price:"入場無料／水族館4施設共通券は5000円前後", parking:"yes", access:"シーサイドライン「八景島」駅から徒歩2分",
+ baby:"授乳室・おむつ替えあり／ベビーカーOK", lunch:"島内にレストラン・フードコート多数。",
+ officialUrl:"https://www.seaparadise.co.jp/",
+ desc:"水族館・遊園地・海辺の散策が一体になった島全体がテーマパーク。屋内水族館は雨でも安心。",
+ tip:"島まで距離があるため、小さい子はベビーカー必須。"},
+{region:"神奈川", name:"アンパンマンこどもミュージアム＆モール横浜", area:"横浜市西区", lat:35.4570, lng:139.6270,
+ ages:["0-1歳","2-3歳","4-6歳"], weather:["晴れ","雨"], duration:["半日"],
+ price:"1歳以上2000〜2600円（モールは無料）", parking:"yes", access:"JR・東急・京急「横浜」駅から徒歩8分",
+ baby:"授乳室・調乳室完備／ベビーカーOK", lunch:"モール内にパン屋・カフェ・レストランあり（離乳食メニューも）。",
+ officialUrl:"https://www.yokohama-anpanman.jp/",
+ desc:"未就学児にターゲットを絞った屋内施設。低い年齢でも安全に遊べる作り。",
+ tip:"混雑しやすいので午後より午前の入場がおすすめ。"},
+{region:"神奈川", name:"カップヌードルミュージアム横浜", area:"横浜市みなとみらい", lat:35.4564, lng:139.6337,
+ ages:["低学年","高学年"], weather:["晴れ","雨"], duration:["半日"],
+ price:"大人500円／高校生以下 無料（体験は別途500円）", parking:"yes", access:"みなとみらい線「みなとみらい」駅から徒歩8分",
+ baby:"おむつ替えあり／ベビーカーOK", lunch:"館内にヌードルバー・カフェあり。みなとみらい周辺は飲食店豊富。",
+ officialUrl:"https://www.cupnoodles-museum.jp/",
+ desc:"自分だけのカップヌードルを作る体験が名物。展示は歴史寄りで低学年〜が理解しやすい。",
+ tip:"体験コーナーは当日整理券制、朝イチ確保が安心。"},
+{region:"神奈川", name:"新江ノ島水族館", area:"藤沢市・江の島", lat:35.3009, lng:139.4802,
+ ages:["0-1歳","2-3歳","4-6歳","低学年","高学年"], weather:["晴れ","雨"], duration:["半日","1日"],
+ price:"大人2500円台／子供1200円台", parking:"yes", access:"小田急線「片瀬江ノ島」駅から徒歩3分",
+ baby:"授乳室・おむつ替えあり／ベビーカーOK", lunch:"館内にレストラン・カフェあり。海沿いにも飲食店多数。",
+ officialUrl:"https://www.enosui.com/",
+ desc:"相模湾を望む立地で、屋内水族館と海辺散策を一度に楽しめる。イルカショーも人気。",
+ tip:"帰りに江の島の海辺を歩けば、雨上がりでも1日プランになる。"},
+{region:"神奈川", name:"箱根（彫刻の森・ロープウェイ）", area:"箱根町", lat:35.2401, lng:139.0393,
+ ages:["低学年","高学年"], weather:["晴れ"], duration:["1日"],
+ price:"彫刻の森 大人2000円台＋ロープウェイ・登山鉄道別途", parking:"yes", access:"箱根登山鉄道「彫刻の森」駅から徒歩2分",
+ baby:"おむつ替えあり／屋外中心で長距離歩行あり", lunch:"美術館内にカフェあり。箱根エリアに飲食店多数。",
+ officialUrl:"https://www.hakone-oam.or.jp/",
+ desc:"野外美術館やロープウェイでの景色を楽しむ観光型のお出かけ。歩く距離が長め。",
+ tip:"未就学児には移動時間が長く感じられるので、対象は低学年以上向き。"},
+{region:"神奈川", name:"山下公園", area:"横浜市中区", lat:35.4453, lng:139.6503,
+ ages:["0-1歳","2-3歳","4-6歳","低学年"], weather:["晴れ"], duration:["半日"],
+ price:"入園無料", parking:"yes", access:"みなとみらい線「元町・中華街」駅から徒歩3分",
+ baby:"おむつ替えあり／ベビーカーOK（ベイエリアの舗装路が中心）", lunch:"隣接する元町・中華街エリアに飲食店多数。",
+ officialUrl:null,
+ desc:"海沿いの遊歩道と芝生広場がある開放的な公園。氷川丸見学や中華街散策とも組み合わせやすい。",
+ tip:"ベビーカーのまま長時間歩ける舗装路が多く、乳幼児連れの散歩に向く。"},
+{region:"千葉", name:"東京ディズニーランド／シー", area:"浦安市", lat:35.6329, lng:139.8804,
+ ages:["2-3歳","4-6歳","低学年","高学年"], weather:["晴れ","雨"], duration:["1日"],
+ price:"1デーパスポート 変動制・大人7900円〜10900円程度", parking:"yes", access:"JR「舞浜」駅から徒歩／モノレール",
+ baby:"授乳室・おむつ替え多数完備／ベビーカーOK（貸出あり）", lunch:"パーク内にレストラン・軽食店が非常に豊富。",
+ officialUrl:"https://www.tokyodisneyresort.jp/",
+ desc:"屋内アトラクションも多く、多少の雨でも進行できるプログラムが多い王道テーマパーク。",
+ tip:"未就学児はキャラクターグリーティングだけでも大満足なことが多い。"},
+{region:"千葉", name:"マザー牧場", area:"富津市", lat:35.2333, lng:139.9333,
+ ages:["0-1歳","2-3歳","4-6歳","低学年","高学年"], weather:["晴れ"], duration:["1日"],
+ price:"大人1500円台／子供800円台", parking:"yes", access:"JR「君津」駅からバス約40分",
+ baby:"おむつ替えあり／ベビーカーOK（一部坂道は不向き）", lunch:"園内にレストラン・ジンギスカン等の飲食施設多数。",
+ officialUrl:"https://www.motherfarm.co.jp/",
+ desc:"動物とのふれあい、羊の追い込みショー、季節の花畑など高原ならではの開放感が魅力。",
+ tip:"起伏のある高原なので、ベビーカーより抱っこ紐が向くエリアも。"},
+{region:"千葉", name:"鴨川シーワールド", area:"鴨川市", lat:35.1122, lng:140.1064,
+ ages:["0-1歳","2-3歳","4-6歳","低学年","高学年"], weather:["晴れ","雨"], duration:["1日"],
+ price:"大人3000円台／子供1600円台", parking:"yes", access:"JR「安房鴨川」駅からバス約10分",
+ baby:"おむつ替え・授乳室あり／ベビーカーOK", lunch:"館内にレストラン・カフェ複数あり。",
+ officialUrl:"https://www.kamogawa-seaworld.jp/",
+ desc:"シャチのパフォーマンスが名物の海沿い水族館。屋外スタジアム席と屋内展示の両方あり。",
+ tip:"東京から片道2時間ほど、1日仕事になる遠出プラン向き。"},
+{region:"千葉", name:"ふなばしアンデルセン公園", area:"船橋市", lat:35.7328, lng:140.0134,
+ ages:["0-1歳","2-3歳","4-6歳","低学年","高学年"], weather:["晴れ"], duration:["1日"],
+ price:"大人900円／中学生以下 無料", parking:"yes", access:"新京成線「三咲」駅からバス約15分",
+ baby:"おむつ替えあり／ベビーカーOK", lunch:"園内にレストラン・売店あり。芝生でのピクニックも人気。",
+ officialUrl:"https://www.park-funabashi.or.jp/andersen/",
+ desc:"大型遊具ゾーンから幼児向けの「わんぱく王国」まで、年齢別にエリアが分かれている公園。",
+ tip:"じゃぶじゃぶ池もあるので夏は着替えを多めに。"},
+{region:"千葉", name:"東京ドイツ村", area:"袖ケ浦市", lat:35.4102, lng:140.0339,
+ ages:["0-1歳","2-3歳","4-6歳","低学年"], weather:["晴れ"], duration:["半日","1日"],
+ price:"1台（乗員数分）3000円前後（人数不問）", parking:"yes", access:"公共交通は乏しく車移動が前提",
+ baby:"おむつ替えあり／ベビーカーOK", lunch:"園内にレストラン・売店あり。",
+ officialUrl:"https://www.tokyo-doitsumura.co.jp/",
+ desc:"広大な敷地に芝生・動物ふれあい・小さな乗り物が点在。混雑が少なめでのんびり過ごせる。",
+ tip:"車移動が前提の立地。夜のイルミネーションは冬季限定。"},
+{region:"千葉", name:"谷津バラ園・谷津干潟公園", area:"習志野市", lat:35.6754, lng:140.0092,
+ ages:["0-1歳","2-3歳","4-6歳","低学年"], weather:["晴れ"], duration:["半日"],
+ price:"バラ園 大人220円程度（シーズン外は無料期間あり）／干潟公園は無料", parking:"yes", access:"京成線「京成谷津」駅から徒歩10分",
+ baby:"おむつ替えあり／ベビーカーOK", lunch:"園内に軽食店あり。谷津駅周辺にも飲食店あり。",
+ officialUrl:null,
+ desc:"バラ園と、渡り鳥が集まる干潟に隣接した公園がセットになったのんびり系スポット。",
+ tip:"バラの見頃（春・秋）以外は混雑が少なく、乳幼児連れでもゆったり歩ける。"},
+{region:"茨城", name:"国営ひたち海浜公園", area:"ひたちなか市", lat:36.3990, lng:140.5977,
+ ages:["0-1歳","2-3歳","4-6歳","低学年","高学年"], weather:["晴れ"], duration:["1日"],
+ price:"大人450円／中学生以下 無料", parking:"yes", access:"JR「勝田」駅からバス約20分",
+ baby:"おむつ替え・授乳室あり／ベビーカーOK", lunch:"園内にレストラン・売店複数あり。",
+ officialUrl:"https://hitachikaihin.jp/",
+ desc:"ネモフィラやコキアで有名な丘陵の公園。大型遊具エリアや自転車コースもある。",
+ tip:"花のシーズンは特に混雑。開園直後の入園がおすすめ。"},
+{region:"茨城", name:"アクアワールド茨城県大洗水族館", area:"大洗町", lat:36.3103, lng:140.5786,
+ ages:["0-1歳","2-3歳","4-6歳","低学年","高学年"], weather:["晴れ","雨"], duration:["半日","1日"],
+ price:"大人2000円台／子供1000円台", parking:"yes", access:"鹿島臨海鉄道「大洗」駅からバス約10分",
+ baby:"授乳室・おむつ替えあり／ベビーカー貸出あり", lunch:"館内にレストラン・売店あり。",
+ officialUrl:"https://www.aquaworld-oarai.com/",
+ desc:"サメの飼育種類数が国内屈指。屋外の展望テラスから海を眺められるのも特徴。",
+ tip:"授乳室・ベビーカー貸出ありで乳児連れも安心。"},
+{region:"栃木", name:"那須どうぶつ王国", area:"那須町", lat:37.0159, lng:139.9626,
+ ages:["0-1歳","2-3歳","4-6歳","低学年","高学年"], weather:["晴れ","雨"], duration:["1日"],
+ price:"大人2500円前後", parking:"yes", access:"JR「黒磯」駅からバス約50分（車が便利）",
+ baby:"おむつ替えあり／ベビーカーOK", lunch:"園内にレストラン・カフェ複数あり。",
+ officialUrl:"https://www.nasu-oukoku.com/",
+ desc:"屋内王国（雨でも安心）と屋外王国が分かれている高原の動物園。ふれあい体験が豊富。",
+ tip:"標高が高く夏でも涼しいが、朝晩は羽織るものを。"},
+{region:"栃木", name:"東武ワールドスクウェア", area:"日光市", lat:36.7501, lng:139.6112,
+ ages:["低学年","高学年"], weather:["晴れ"], duration:["半日","1日"],
+ price:"大人2800円台／子供1400円台", parking:"yes", access:"東武線「東武ワールドスクウェア」駅から徒歩3分",
+ baby:"おむつ替えあり／ベビーカーOK", lunch:"園内にレストラン・売店あり。",
+ officialUrl:"https://www.tobuws.co.jp/",
+ desc:"世界の建造物のミニチュアが並ぶ屋外施設。社会科見学的な要素があり小学生に人気。",
+ tip:"未就学児にはミニチュアの面白さが伝わりにくいことも。"},
+{region:"群馬", name:"群馬サファリパーク", area:"富岡市", lat:36.2321, lng:138.8814,
+ ages:["0-1歳","2-3歳","4-6歳","低学年","高学年"], weather:["晴れ","雨"], duration:["半日","1日"],
+ price:"大人2900円台（マイカー入園料込み目安）", parking:"yes", access:"上信電鉄「上州富岡」駅からバス約20分（車が便利）",
+ baby:"おむつ替えあり／車内中心でベビーカー不要な区間も", lunch:"園内にレストラン・売店あり。",
+ officialUrl:"https://www.safari.co.jp/",
+ desc:"自家用車やサファリバスに乗ったまま動物を間近に見られる。車移動なので雨天でも楽しめる。",
+ tip:"車内から見るスタイルなので、寝てしまった乳児がいても安心。"},
+
+{region:"東京", name:"井の頭恩賜公園", area:"武蔵野市・三鷹市", lat:35.7048, lng:139.5734,
+ ages:["0-1歳","2-3歳","4-6歳","低学年","高学年"], weather:["晴れ"], duration:["半日"],
+ price:"入園無料（ボート等は有料）", parking:"no", access:"JR・京王井の頭線「吉祥寺」駅から徒歩5分",
+ baby:"おむつ替えトイレあり／ベビーカーOK", lunch:"吉祥寺駅周辺に飲食店多数。園内売店は限定的。",
+ officialUrl:"https://www.tokyo-park.or.jp/park/inokashira/",
+ desc:"池を中心にボートや動物園分園がある定番の公園。吉祥寺散策とセットにしやすい。",
+ tip:"ボートは休日混雑しやすい。開園直後がねらい目。"},
+{region:"東京", name:"井の頭自然文化園", area:"武蔵野市", lat:35.7010, lng:139.5763,
+ ages:["0-1歳","2-3歳","4-6歳","低学年"], weather:["晴れ"], duration:["半日"],
+ price:"大人400円／中学生以下 無料", parking:"no", access:"JR・京王井の頭線「吉祥寺」駅から徒歩10分",
+ baby:"おむつ替えあり／ベビーカーOK", lunch:"園内に売店あり。吉祥寺エリアに飲食店多数。",
+ officialUrl:"https://www.tokyo-zoo.net/zoo/inokashira/",
+ desc:"ゾウのはな子で知られた小規模な動物園。分園には水生物館もあり半日で回れる規模感。",
+ tip:"リスの小径は放し飼いのリスと近距離で見られ子どもに人気。"},
+{region:"東京", name:"しながわ水族館", area:"品川区・大井町", lat:35.5967, lng:139.7375,
+ ages:["0-1歳","2-3歳","4-6歳","低学年","高学年"], weather:["晴れ","雨"], duration:["半日"],
+ price:"大人1500円台／子供600円台", parking:"yes", access:"京急線「鮫洲」駅から徒歩8分",
+ baby:"おむつ替え・授乳室あり／ベビーカーOK", lunch:"館内に軽食コーナーあり。",
+ officialUrl:"https://www.aquarium.gr.jp/",
+ desc:"大型水族館より小ぶりでゆったり回れる。イルカ・アシカショーもあり幼児連れでも疲れにくい。",
+ tip:"海底トンネルは小さい子が怖がることもあるので様子を見ながら進むと◎。"},
+{region:"東京", name:"マクセル アクアパーク品川", area:"港区・品川駅前", lat:35.6280, lng:139.7402,
+ ages:["0-1歳","2-3歳","4-6歳","低学年","高学年"], weather:["晴れ","雨"], duration:["半日"],
+ price:"大人2500円前後／子供1300円前後（変動制）", parking:"yes", access:"JR・京急「品川」駅から徒歩2分",
+ baby:"おむつ替え・授乳室あり／ベビーカーOK", lunch:"品川駅構内・周辺に飲食店多数。",
+ officialUrl:"https://www.aqua-park.jp/",
+ desc:"駅直結でアクセス抜群。光や音の演出が派手なイルカショーが名物の都市型水族館。",
+ tip:"雨の日の代替プランとして駅近なのが便利。"},
+{region:"東京", name:"東京ジョイポリス", area:"港区・お台場", lat:35.6290, lng:139.7757,
+ ages:["4-6歳","低学年","高学年"], weather:["晴れ","雨"], duration:["半日","1日"],
+ price:"入場料800円＋アトラクション料金（フリーパス4500円程度）", parking:"yes", access:"ゆりかもめ「お台場海浜公園」駅から徒歩2分",
+ baby:"おむつ替えあり／小さい子には物足りない場合あり", lunch:"デックス東京ビーチ内に飲食店多数。",
+ officialUrl:"https://tokyo-joypolis.com/",
+ desc:"屋内型のアミューズメント施設。VRやライド系アトラクションが多く小学生以上が楽しみやすい。",
+ tip:"未就学児が乗れる乗り物は限られるので年齢確認を。"},
+{region:"東京", name:"日本科学未来館", area:"江東区・お台場", lat:35.6197, lng:139.7766,
+ ages:["4-6歳","低学年","高学年"], weather:["晴れ","雨"], duration:["半日","1日"],
+ price:"大人630円／18歳以下 210円", parking:"yes", access:"ゆりかもめ「テレコムセンター」駅から徒歩4分",
+ baby:"おむつ替え・授乳室あり／ベビーカーOK", lunch:"館内にレストランあり。",
+ officialUrl:"https://www.miraikan.jst.go.jp/",
+ desc:"地球ディスプレイ「Geo-Cosmos」やロボット展示など体験型が中心の科学館。",
+ tip:"実演・ワークショップは時間指定制のものが多く、公式サイトで事前確認がおすすめ。"},
+{region:"東京", name:"東京都水の科学館", area:"江東区・有明", lat:35.6432, lng:139.7930,
+ ages:["0-1歳","2-3歳","4-6歳","低学年","高学年"], weather:["晴れ","雨"], duration:["半日"],
+ price:"入館無料", parking:"yes", access:"りんかい線「国際展示場」駅から徒歩8分",
+ baby:"おむつ替えあり／ベビーカーOK", lunch:"館内カフェあり。有明周辺に飲食店あり。",
+ officialUrl:"https://www.mizunokagaku.jp/",
+ desc:"水をテーマにした無料の体験型施設。館内は空調完備で雨の日・猛暑日の避難先にも便利。",
+ tip:"無料の割に体験展示が充実。休日は事前予約枠があるので公式サイトを確認。"},
+{region:"東京", name:"東京おもちゃ美術館", area:"新宿区・四谷", lat:35.6938, lng:139.7220,
+ ages:["0-1歳","2-3歳","4-6歳","低学年"], weather:["晴れ","雨"], duration:["半日"],
+ price:"大人1200円／子供800円", parking:"no", access:"都営新宿線「曙橋」駅から徒歩6分",
+ baby:"おむつ替えあり／ベビーカーOK", lunch:"館内飲食は限定的。四谷エリアに飲食店あり。",
+ officialUrl:"https://goodtoy.org/ttm/",
+ desc:"廃校を活用した木のおもちゃだらけの体験施設。乳幼児から遊べるスペースが充実。",
+ tip:"木のプールなど乳児向けエリアもあり、雨の日の定番として人気。"},
+{region:"東京", name:"池袋防災館", area:"豊島区", lat:35.7295, lng:139.7212,
+ ages:["4-6歳","低学年","高学年"], weather:["雨"], duration:["半日"],
+ price:"入館無料", parking:"no", access:"JR「池袋」駅から徒歩7分",
+ baby:"おむつ替えあり", lunch:"池袋駅周辺に飲食店多数。",
+ officialUrl:"https://www.tfd.metro.tokyo.lg.jp/hp-ikebukurobousai/",
+ desc:"地震や消火の体験ができる無料の防災学習施設。雨の日でも屋内で過ごせる。",
+ tip:"体験プログラムは事前予約制の回もあるため公式サイトで確認を。"},
+{region:"東京", name:"本所防災館", area:"墨田区", lat:35.7101, lng:139.8070,
+ ages:["4-6歳","低学年","高学年"], weather:["雨"], duration:["半日"],
+ price:"入館無料", parking:"no", access:"都営浅草線「本所吾妻橋」駅から徒歩3分",
+ baby:"おむつ替えあり", lunch:"スカイツリータウンが近く飲食店多数。",
+ officialUrl:"https://www.tfd.metro.tokyo.lg.jp/hp-honjyoboudai/",
+ desc:"消防の実演を交えた無料の防災体験館。スカイツリー観光のついでに寄りやすい立地。",
+ tip:"雨の日にすみだ水族館と組み合わせるプランがおすすめ。"},
+{region:"東京", name:"立川防災館", area:"立川市", lat:35.7060, lng:139.4160,
+ ages:["4-6歳","低学年","高学年"], weather:["雨"], duration:["半日"],
+ price:"入館無料", parking:"yes", access:"JR「立川」駅から徒歩10分",
+ baby:"おむつ替えあり", lunch:"立川駅周辺に飲食店多数。",
+ officialUrl:"https://www.tfd.metro.tokyo.lg.jp/hp-tatikawaboudai/",
+ desc:"地震や煙体験ができる無料施設。国営昭和記念公園と合わせて立川エリアで1日過ごせる。",
+ tip:"体験は所要時間が決まっているため、時間に余裕を持って訪問を。"},
+{region:"東京", name:"東京ドームシティアトラクションズ", area:"文京区・後楽園", lat:35.7060, lng:139.7522,
+ ages:["2-3歳","4-6歳","低学年","高学年"], weather:["晴れ","雨"], duration:["半日","1日"],
+ price:"入園無料（乗り物ごとに料金／フリーパス4000円台）", parking:"yes", access:"JR・地下鉄「水道橋」「後楽園」駅から徒歩1〜3分",
+ baby:"おむつ替えあり／ベビーカーOK", lunch:"東京ドームシティ内に飲食店多数。",
+ officialUrl:"https://www.tokyo-dome.co.jp/tdcity/attraction/",
+ desc:"都心にありながら絶叫系から幼児向けまで揃う遊園地。屋根付きエリアもあり小雨でも遊べる。",
+ tip:"入園無料なので乗る分だけ払えて予算調整しやすい。"},
+{region:"東京", name:"東京サマーランド", area:"あきる野市", lat:35.7280, lng:139.2960,
+ ages:["0-1歳","2-3歳","4-6歳","低学年","高学年"], weather:["晴れ","雨"], duration:["1日"],
+ price:"入園＋プール利用 大人3300円台", parking:"yes", access:"JR「拝島」駅からバス20分",
+ baby:"おむつ替えあり／ベビーカーOK", lunch:"園内にレストラン・売店多数。",
+ officialUrl:"https://www.summerland.co.jp/",
+ desc:"屋内プールもあるため雨天や冬でも遊べるプール＋遊園地の複合施設。",
+ tip:"屋内プールエリアは冬季も営業しているので通年の選択肢になる。"},
+{region:"東京", name:"高尾山", area:"八王子市", lat:35.6250, lng:139.2431,
+ ages:["2-3歳","4-6歳","低学年","高学年"], weather:["晴れ"], duration:["半日","1日"],
+ price:"入山無料（ケーブルカー往復 大人1130円）", parking:"yes", access:"京王線「高尾山口」駅から徒歩5分",
+ baby:"おむつ替えは麓のみ／ベビーカーは山頂までは不向き", lunch:"山麓・山頂に飲食店あり。",
+ officialUrl:"https://www.takaotozan.co.jp/",
+ desc:"ケーブルカー・リフトを使えば小さい子でも山頂近くまで楽に登れる手軽な山。",
+ tip:"1号路は舗装されており歩きやすいが、抱っこ紐があると安心。"},
+{region:"東京", name:"多摩六都科学館", area:"西東京市", lat:35.7345, lng:139.5380,
+ ages:["4-6歳","低学年","高学年"], weather:["晴れ","雨"], duration:["半日"],
+ price:"大人510円／中学生以下 無料", parking:"yes", access:"西武新宿線「田無」駅からバス15分",
+ baby:"おむつ替えあり", lunch:"館内に軽食コーナーあり。",
+ officialUrl:"https://www.tamarokuto.or.jp/",
+ desc:"世界最大級のプラネタリウムが自慢の科学館。体験型展示も多く小学生に人気。",
+ tip:"プラネタリウムは日時指定制のことが多く、早めの到着が安心。"},
+{region:"東京", name:"板橋区立熱帯環境植物館", area:"板橋区", lat:35.7860, lng:139.6520,
+ ages:["0-1歳","2-3歳","4-6歳","低学年"], weather:["雨"], duration:["半日"],
+ price:"大人260円／中学生以下 無料", parking:"yes", access:"都営三田線「高島平」駅から徒歩13分",
+ baby:"おむつ替えあり", lunch:"館内に軽食あり。",
+ officialUrl:null,
+ desc:"熱帯植物と熱帯魚を間近に見られる屋内施設。ゴミ処理施設の余熱を利用した温室が特徴。",
+ tip:"空いていることが多く、雨の日の穴場的な過ごし先。"},
+{region:"東京", name:"砧公園", area:"世田谷区", lat:35.6208, lng:139.6220,
+ ages:["0-1歳","2-3歳","4-6歳","低学年","高学年"], weather:["晴れ"], duration:["半日"],
+ price:"入園無料", parking:"yes", access:"東急田園都市線「用賀」駅から徒歩20分／バスあり",
+ baby:"おむつ替えトイレあり／ベビーカーOK", lunch:"公園内軽食は少なめ。用賀駅周辺に飲食店あり。",
+ officialUrl:"https://www.tokyo-park.or.jp/park/kinuta/",
+ desc:"広い芝生とアスレチック遊具がある落ち着いた公園。ピクニックにも向く。",
+ tip:"世田谷美術館が隣接しており、大人も楽しめる組み合わせ。"},
+{region:"東京", name:"木場公園", area:"江東区", lat:35.6725, lng:139.8080,
+ ages:["0-1歳","2-3歳","4-6歳","低学年","高学年"], weather:["晴れ"], duration:["半日"],
+ price:"入園無料", parking:"yes", access:"東京メトロ東西線「木場」駅から徒歩5分",
+ baby:"おむつ替えトイレあり／ベビーカーOK", lunch:"公園周辺に飲食店あり。",
+ officialUrl:"https://www.tokyo-park.or.jp/park/kiba/",
+ desc:"広大な芝生広場とサイクリングコースがある公園。都心にいながら開放感がある。",
+ tip:"自転車の練習にも使われる広場があり、休日は賑わう。"},
+{region:"東京", name:"城南島海浜公園", area:"大田区", lat:35.5850, lng:139.7960,
+ ages:["0-1歳","2-3歳","4-6歳","低学年","高学年"], weather:["晴れ"], duration:["半日"],
+ price:"入園無料", parking:"yes", access:"京急バス「城南島海浜公園」下車すぐ",
+ baby:"おむつ替えトイレあり／ベビーカーOK", lunch:"公園内に売店あり。",
+ officialUrl:"https://www.tokyo-park.or.jp/park/jonanjima/",
+ desc:"羽田空港に離着陸する飛行機を間近に見られる公園。飛行機好きの子に大人気。",
+ tip:"夏は海water遊びもできる砂浜あり（遊泳不可）。"},
+{region:"東京", name:"アネビートリムパーク 稲城", area:"稲城市", lat:35.6390, lng:139.5010,
+ ages:["0-1歳","2-3歳","4-6歳"], weather:["雨"], duration:["半日"],
+ price:"時間制 子供1000円前後（要予約の場合あり）", parking:"yes", access:"京王相模原線「稲城」駅からバス",
+ baby:"おむつ替え・授乳室あり", lunch:"館内に飲食スペースあり。",
+ officialUrl:null,
+ desc:"大型クッション遊具やボールプールで体を動かせる屋内型施設。雨の日の定番。",
+ tip:"人気の時間帯は事前予約がおすすめ。"},
+{region:"東京", name:"キドキドあそびのせかい アリオ北砂店", area:"江東区・北砂", lat:35.6790, lng:139.8330,
+ ages:["0-1歳","2-3歳","4-6歳"], weather:["雨"], duration:["半日"],
+ price:"時間制 子供1000円前後", parking:"yes", access:"都営新宿線「西大島」駅からバス",
+ baby:"おむつ替え・授乳室あり", lunch:"アリオ北砂内にフードコートあり。",
+ officialUrl:null,
+ desc:"ショッピングモール内の室内遊び場。天候に左右されず気軽に立ち寄れる。",
+ tip:"買い物のついでに立ち寄りやすく、雨の日の急な予定変更にも便利。"},
+{region:"東京", name:"板橋区立こども動物園", area:"板橋区", lat:35.7500, lng:139.6900,
+ ages:["0-1歳","2-3歳","4-6歳"], weather:["晴れ"], duration:["半日"],
+ price:"入園無料", parking:"no", access:"都営三田線「板橋本町」駅から徒歩13分",
+ baby:"おむつ替えあり", lunch:"園内売店は少なめ。周辺に飲食店あり。",
+ officialUrl:null,
+ desc:"モルモットやウサギとのふれあいが中心の無料の小さな動物園。乳幼児連れにちょうど良い規模。",
+ tip:"ふれあいコーナーは時間帯が決まっていることがあるため確認を。"},
+{region:"東京", name:"夢の島公園・熱帯植物館", area:"江東区", lat:35.6570, lng:139.8250,
+ ages:["0-1歳","2-3歳","4-6歳","低学年","高学年"], weather:["晴れ","雨"], duration:["半日"],
+ price:"公園無料／熱帯植物館 大人250円", parking:"yes", access:"東京メトロ有楽町線「新木場」駅から徒歩13分",
+ baby:"おむつ替えあり", lunch:"公園内に売店あり。",
+ officialUrl:"https://www.tokyo-park.or.jp/park/yumenoshima/",
+ desc:"広い芝生広場と屋内の熱帯植物館がセットになった公園。晴れでも雨でも計画が立てやすい。",
+ tip:"BMX場やアーチェリー場もあり、体を動かしたい小学生にも良い。"},
+{region:"東京", name:"蘆花恒春園", area:"世田谷区", lat:35.6470, lng:139.6120,
+ ages:["0-1歳","2-3歳","4-6歳","低学年","高学年"], weather:["晴れ"], duration:["半日"],
+ price:"入園無料", parking:"yes", access:"京王線「芦花公園」駅から徒歩15分",
+ baby:"おむつ替えトイレあり／ベビーカーOK", lunch:"公園周辺の飲食店は少なめ。",
+ officialUrl:"https://www.tokyo-park.or.jp/park/roka/",
+ desc:"徳冨蘆花の旧宅を含む静かな公園。広場や遊具スペースがあり近隣住民の憩いの場。",
+ tip:"混雑が少なく、ゆったり過ごしたい日におすすめ。"},
+{region:"東京", name:"水元公園", area:"葛飾区", lat:35.7930, lng:139.8660,
+ ages:["0-1歳","2-3歳","4-6歳","低学年","高学年"], weather:["晴れ"], duration:["半日","1日"],
+ price:"入園無料（水遊び場は夏期のみ）", parking:"yes", access:"JR「金町」駅からバス10分",
+ baby:"おむつ替えトイレあり／ベビーカーOK", lunch:"公園内に売店あり。",
+ officialUrl:"https://www.tokyo-park.or.jp/park/mizumoto/",
+ desc:"都内最大級の水郷公園。花菖蒲やメタセコイアの並木など季節ごとの見どころが豊富。",
+ tip:"夏はじゃぶじゃぶ池が開放され、水遊びスポットとして人気。"},
+{region:"東京", name:"篠崎公園", area:"江戸川区", lat:35.7080, lng:139.8850,
+ ages:["0-1歳","2-3歳","4-6歳","低学年","高学年"], weather:["晴れ"], duration:["半日"],
+ price:"入園無料", parking:"yes", access:"都営新宿線「篠崎」駅から徒歩10分",
+ baby:"おむつ替えトイレあり／ベビーカーOK", lunch:"公園周辺に飲食店あり。",
+ officialUrl:"https://www.tokyo-park.or.jp/park/shinozaki/",
+ desc:"江戸川沿いの広々とした公園。大型遊具や芝生広場があり伸び伸び遊べる。",
+ tip:"河川敷なので日差しを遮るものが少なめ。夏は熱中症対策を。"},
+{region:"東京", name:"城北中央公園", area:"板橋区・練馬区", lat:35.7660, lng:139.6540,
+ ages:["0-1歳","2-3歳","4-6歳","低学年","高学年"], weather:["晴れ"], duration:["半日"],
+ price:"入園無料", parking:"yes", access:"西武池袋線「江古田」駅から徒歩20分",
+ baby:"おむつ替えトイレあり／ベビーカーOK", lunch:"公園周辺に飲食店あり。",
+ officialUrl:"https://www.tokyo-park.or.jp/park/johoku/",
+ desc:"広大な野球場・陸上競技場と併設された公園エリアもあり、家族でのびのび過ごせる。",
+ tip:"複数の遊具広場があり、年齢に合わせて場所を選べる。"},
+{region:"東京", name:"国営東京臨海広域防災公園（そなエリア東京）", area:"江東区・有明", lat:35.6350, lng:139.7930,
+ ages:["4-6歳","低学年","高学年"], weather:["晴れ","雨"], duration:["半日"],
+ price:"入館無料", parking:"yes", access:"りんかい線「国際展示場」駅から徒歩約2分",
+ baby:"おむつ替えあり", lunch:"有明周辺に飲食店あり。",
+ officialUrl:"https://www.tokyorinkai-koen.jp/sonaarea/",
+ desc:"震災後の街を再現した空間を体験しながら防災を学べる無料施設。ゲーム感覚で学べる展示が多い。",
+ tip:"体験ツアーは時間指定制。事前に公式サイトで空き状況を確認するのがおすすめ。"},
+
+{region:"神奈川", name:"よこはま動物園ズーラシア", area:"横浜市旭区", lat:35.4942, lng:139.5273,
+ ages:["0-1歳","2-3歳","4-6歳","低学年","高学年"], weather:["晴れ"], duration:["1日"],
+ price:"大人800円／高校生以下 無料", parking:"yes", access:"相鉄線「鶴ケ峰」駅などからバス15分",
+ baby:"おむつ替え・授乳室あり／ベビーカーOK", lunch:"園内にレストランあり。",
+ officialUrl:"http://www.hama-midorinokyokai.or.jp/zoo/zoorasia/",
+ desc:"国内最大級の敷地に世界の動物を気候帯別に展示する動物園。1日たっぷり楽しめる規模。",
+ tip:"園内は広いので、小さい子連れはベビーカーか園内バスの利用が必須級。"},
+{region:"神奈川", name:"横浜市立野毛山動物園", area:"横浜市西区", lat:35.4460, lng:139.6210,
+ ages:["0-1歳","2-3歳","4-6歳","低学年","高学年"], weather:["晴れ"], duration:["半日"],
+ price:"入園無料", parking:"no", access:"JR「桜木町」駅から徒歩15分",
+ baby:"おむつ替えあり", lunch:"園内に売店あり。桜木町周辺に飲食店多数。",
+ officialUrl:null,
+ desc:"入園無料ながらライオンやキリンもいる本格的な動物園。半日プランに組み込みやすい。",
+ tip:"無料とは思えない充実度。桜木町・みなとみらい観光の合間に立ち寄りやすい。"},
+{region:"神奈川", name:"こどもの国", area:"横浜市青葉区・町田市", lat:35.5680, lng:139.5230,
+ ages:["0-1歳","2-3歳","4-6歳","低学年","高学年"], weather:["晴れ"], duration:["1日"],
+ price:"大人600円／中学生以下 200円", parking:"yes", access:"こどもの国線「こどもの国」駅から徒歩3分",
+ baby:"おむつ替え・授乳室あり／ベビーカーOK", lunch:"園内に売店・軽食あり。",
+ officialUrl:"https://www.kodomonokuni.org/",
+ desc:"広大な敷地に牧場・アスレチック・プールなどが揃う複合型施設。1日体を動かして遊べる。",
+ tip:"起伏があるエリアも多いので歩きやすい靴で。夏はプールも人気。"},
+{region:"神奈川", name:"藤子・F・不二雄ミュージアム", area:"川崎市多摩区", lat:35.6140, lng:139.5470,
+ ages:["0-1歳","2-3歳","4-6歳","低学年"], weather:["晴れ","雨"], duration:["半日"],
+ price:"大人1000円／子供500円（日時指定制）", parking:"no", access:"小田急線「登戸」駅からバス9分",
+ baby:"おむつ替えあり／ベビーカーOK", lunch:"館内にカフェあり。",
+ officialUrl:"https://fujiko-museum.com/",
+ desc:"ドラえもんなど藤子作品の原画やジオラマが並ぶ屋内ミュージアム。雨の日の定番候補。",
+ tip:"日時指定の予約制チケットが必要。事前に公式サイトでの購入が必須。"},
+{region:"神奈川", name:"生田緑地（かわさき宙と緑の科学館）", area:"川崎市多摩区", lat:35.6167, lng:139.5500,
+ ages:["0-1歳","2-3歳","4-6歳","低学年","高学年"], weather:["晴れ","雨"], duration:["半日","1日"],
+ price:"公園無料／科学館 大人520円", parking:"yes", access:"小田急線「向ケ丘遊園」駅から徒歩13分",
+ baby:"おむつ替えあり", lunch:"園内に売店あり。",
+ officialUrl:null,
+ desc:"緑豊かな公園にプラネタリウムのある科学館や日本民家園が集まるエリア。",
+ tip:"藤子・F・不二雄ミュージアムと合わせて1日プランにも組みやすい。"},
+{region:"神奈川", name:"三菱みなとみらい技術館", area:"横浜市西区・みなとみらい", lat:35.4620, lng:139.6300,
+ ages:["4-6歳","低学年","高学年"], weather:["晴れ","雨"], duration:["半日"],
+ price:"大人500円／小中高生200円", parking:"yes", access:"みなとみらい線「みなとみらい」駅から徒歩8分",
+ baby:"おむつ替えあり", lunch:"みなとみらい周辺に飲食店多数。",
+ officialUrl:null,
+ desc:"航空機や宇宙開発の展示、シミュレーターが体験できる企業ミュージアム。",
+ tip:"フライトシミュレーターは並ぶことがあるので早めの時間に。"},
+{region:"神奈川", name:"コニカミノルタ プラネタリアYOKOHAMA", area:"横浜市西区・横浜駅", lat:35.4650, lng:139.6220,
+ ages:["2-3歳","4-6歳","低学年","高学年"], weather:["晴れ","雨"], duration:["半日"],
+ price:"大人1600円台／子供1000円台（番組により変動）", parking:"no", access:"JR「横浜」駅から徒歩5分",
+ baby:"おむつ替えあり", lunch:"横浜駅周辺に飲食店多数。",
+ officialUrl:"https://planetaria.jp/yokohama/",
+ desc:"横浜駅直結のプラネタリウム。雨の日でも駅から濡れずにアクセスできる。",
+ tip:"癒し系・子供向けなど番組が複数あるので事前にラインナップを確認。"},
+{region:"神奈川", name:"東芝未来科学館", area:"川崎市幸区", lat:35.5320, lng:139.6870,
+ ages:["4-6歳","低学年","高学年"], weather:["晴れ","雨"], duration:["半日"],
+ price:"入館無料", parking:"yes", access:"JR「川崎」駅からバス・徒歩",
+ baby:"おむつ替えあり", lunch:"周辺に飲食店あり。",
+ officialUrl:"https://toshiba-mirai-kagakukan.jp/",
+ desc:"科学の原理を体験しながら学べる無料の企業ミュージアム。実験ショーも開催。",
+ tip:"無料で楽しめる実験ショーは時間が決まっているため公式サイトで確認を。"},
+{region:"神奈川", name:"相模川ふれあい科学館 アクアリウムさがみはら", area:"相模原市中央区", lat:35.5730, lng:139.3760,
+ ages:["0-1歳","2-3歳","4-6歳","低学年","高学年"], weather:["晴れ","雨"], duration:["半日"],
+ price:"大人400円／小中学生100円", parking:"yes", access:"JR相模線「上溝」駅からバス",
+ baby:"おむつ替えあり", lunch:"館内軽食は少なめ。",
+ officialUrl:null,
+ desc:"相模川の淡水魚を中心に展示する小規模な水族館。空いていてゆったり見られる。",
+ tip:"料金が手頃で、近隣にお住まいなら気軽なリピート先になる。"},
+{region:"神奈川", name:"小田原城址公園", area:"小田原市", lat:35.2560, lng:139.1540,
+ ages:["0-1歳","2-3歳","4-6歳","低学年","高学年"], weather:["晴れ"], duration:["半日"],
+ price:"公園無料／天守閣 大人510円", parking:"yes", access:"JR・小田急線「小田原」駅から徒歩10分",
+ baby:"おむつ替えあり", lunch:"城下町エリアに飲食店多数。",
+ officialUrl:"https://odawaracastle.com/",
+ desc:"天守閣に加え、無料の小動物園やミニ遊園地もあり城見学と遊びを両立できる。",
+ tip:"NINJA館など子供向け展示もあり、歴史に詳しくなくても楽しめる。"},
+
+{region:"千葉", name:"千葉市動物公園", area:"千葉市若葉区", lat:35.5980, lng:140.1660,
+ ages:["0-1歳","2-3歳","4-6歳","低学年","高学年"], weather:["晴れ"], duration:["半日","1日"],
+ price:"大人700円／中学生以下 無料", parking:"yes", access:"モノレール「動物公園」駅から徒歩4分",
+ baby:"おむつ替えあり／ベビーカーOK", lunch:"園内にレストランあり。",
+ officialUrl:"https://www.city.chiba.jp/zoo/",
+ desc:"立ち姿が話題になったレッサーパンダ「風太」で知られる動物園。モノレールでのアクセスも楽しい。",
+ tip:"モノレール駅から近く、電車好きの子も一緒に楽しめる。"},
+{region:"千葉", name:"市原ぞうの国", area:"市原市", lat:35.4210, lng:140.1310,
+ ages:["0-1歳","2-3歳","4-6歳","低学年","高学年"], weather:["晴れ"], duration:["半日","1日"],
+ price:"大人2600円台／子供1400円台", parking:"yes", access:"JR「五井」駅からバス30分",
+ baby:"おむつ替えあり", lunch:"園内にレストランあり。",
+ officialUrl:"https://www.zounokuni.com/",
+ desc:"ゾウの絵画パフォーマンスやふれあい体験が名物のテーマパーク。動物との距離が近い。",
+ tip:"ゾウさんショーの時間は事前にチェックして予定を組むのがおすすめ。"},
+{region:"千葉", name:"千葉県立幕張海浜公園", area:"千葉市美浜区", lat:35.6480, lng:140.0330,
+ ages:["0-1歳","2-3歳","4-6歳","低学年","高学年"], weather:["晴れ"], duration:["半日"],
+ price:"入園無料", parking:"yes", access:"JR「海浜幕張」駅から徒歩15分",
+ baby:"おむつ替えトイレあり／ベビーカーOK", lunch:"公園周辺に飲食店あり。",
+ officialUrl:null,
+ desc:"人工海浜と広い芝生がある公園。海を眺めながらのんびり過ごせる。",
+ tip:"サンセットの時間帯は特に気持ちが良く、夕方の散歩にもおすすめ。"},
+{region:"千葉", name:"松戸市21世紀の森と広場", area:"松戸市", lat:35.7860, lng:139.9200,
+ ages:["0-1歳","2-3歳","4-6歳","低学年","高学年"], weather:["晴れ"], duration:["半日"],
+ price:"入園無料", parking:"yes", access:"JR「新八柱」駅から徒歩10分",
+ baby:"おむつ替えトイレあり／ベビーカーOK", lunch:"園内に売店あり。",
+ officialUrl:null,
+ desc:"里山風の自然と大型遊具広場が両方楽しめる公園。自然観察舎もある。",
+ tip:"起伏があるエリアもあるため、ベビーカーより抱っこ紐が楽な場面も。"},
+{region:"千葉", name:"富津公園", area:"富津市", lat:35.2980, lng:139.8060,
+ ages:["0-1歳","2-3歳","4-6歳","低学年","高学年"], weather:["晴れ"], duration:["半日","1日"],
+ price:"入園無料（一部施設は有料）", parking:"yes", access:"JR「青堀」駅からバス15分",
+ baby:"おむつ替えあり", lunch:"公園内に売店あり。",
+ officialUrl:null,
+ desc:"東京湾に突き出た岬にある公園。潮干狩りやキャンプ場もあり自然体験がしやすい。",
+ tip:"潮干狩りシーズンは特に賑わうので、時期を選んで訪れると快適。"},
+{region:"千葉", name:"市川市動植物園", area:"市川市", lat:35.7180, lng:139.9700,
+ ages:["0-1歳","2-3歳","4-6歳","低学年","高学年"], weather:["晴れ"], duration:["半日"],
+ price:"大人430円／中学生以下 無料", parking:"yes", access:"JR「本八幡」駅からバス20分",
+ baby:"おむつ替えあり", lunch:"園内に売店あり。",
+ officialUrl:null,
+ desc:"動物園と植物園、小さな遊園地が一体になったこぢんまりとした施設。",
+ tip:"混雑が少なく、乳幼児連れでもマイペースに回りやすい。"},
+{region:"千葉", name:"袖ケ浦海浜公園", area:"袖ケ浦市", lat:35.4870, lng:140.0330,
+ ages:["0-1歳","2-3歳","4-6歳","低学年","高学年"], weather:["晴れ"], duration:["半日"],
+ price:"入園無料", parking:"yes", access:"JR「袖ケ浦」駅からバス",
+ baby:"おむつ替えトイレあり", lunch:"公園内の売店は少なめ。",
+ officialUrl:null,
+ desc:"東京湾越しに工場夜景も望める公園。芝生広場でのびのび遊べる。",
+ tip:"夕方は工場夜景が見え始め、大人も楽しめる時間帯になる。"},
+{region:"千葉", name:"佐倉草ぶえの丘", area:"佐倉市", lat:35.7220, lng:140.2470,
+ ages:["0-1歳","2-3歳","4-6歳","低学年"], weather:["晴れ"], duration:["半日"],
+ price:"入園無料（乗り物・体験は有料）", parking:"yes", access:"京成線「大佐倉」駅から徒歩20分",
+ baby:"おむつ替えあり", lunch:"園内に軽食あり。",
+ officialUrl:null,
+ desc:"牧場体験やアスレチックが楽しめる里山エリア。動物のふれあいも充実。",
+ tip:"バター作りなどの体験教室は事前予約がおすすめ。"},
+{region:"千葉", name:"成田ゆめ牧場", area:"成田市", lat:35.8390, lng:140.3400,
+ ages:["0-1歳","2-3歳","4-6歳","低学年","高学年"], weather:["晴れ"], duration:["半日","1日"],
+ price:"大人1500円台／子供800円台", parking:"yes", access:"JR「成田」駅からバス30分",
+ baby:"おむつ替えあり", lunch:"園内にレストランあり。",
+ officialUrl:"https://www.yumebokujo.co.jp/",
+ desc:"乳搾りやポニー乗馬など牧場体験が豊富。芝そりゲレンデもあり体を動かして遊べる。",
+ tip:"季節ごとのイベント（いちご狩りなど）もチェックしておくとお得。"},
+
+{region:"埼玉", name:"西武園ゆうえんち", area:"所沢市", lat:35.7770, lng:139.4640,
+ ages:["0-1歳","2-3歳","4-6歳","低学年","高学年"], weather:["晴れ","雨"], duration:["1日"],
+ price:"入園1000円台＋のりものフリーパス別売", parking:"yes", access:"西武山口線「西武園ゆうえんち」駅からすぐ",
+ baby:"おむつ替えあり／ベビーカーOK", lunch:"昭和レトロな商店街エリアに飲食店多数。",
+ officialUrl:"https://www.seibu-leisure.co.jp/seibuen/",
+ desc:"昭和の街並みを再現したエリアが名物のリニューアル遊園地。乗り物も幼児向けから揃う。",
+ tip:"商店街エリアは無料で入れ、雰囲気を楽しむだけでも面白い。"},
+{region:"埼玉", name:"埼玉県こども動物自然公園", area:"東松山市", lat:36.0280, lng:139.3980,
+ ages:["0-1歳","2-3歳","4-6歳","低学年","高学年"], weather:["晴れ"], duration:["1日"],
+ price:"大人510円／中学生以下 無料", parking:"yes", access:"東武東上線「森林公園」駅からバス15分",
+ baby:"おむつ替えあり", lunch:"園内にレストランあり。",
+ officialUrl:"https://www.parks.or.jp/sczoo/",
+ desc:"コアラが見られることで有名な広大な動物園。ふれあい広場も充実している。",
+ tip:"起伏のある広い敷地なので、園内バスやレンタルカートを使うと楽。"},
+{region:"埼玉", name:"川口市グリーンセンター", area:"川口市", lat:35.8380, lng:139.7220,
+ ages:["0-1歳","2-3歳","4-6歳","低学年","高学年"], weather:["晴れ"], duration:["半日"],
+ price:"大人100円台／中学生以下 無料", parking:"yes", access:"JR「東川口」駅からバス10分",
+ baby:"おむつ替えあり", lunch:"園内に売店あり。",
+ officialUrl:null,
+ desc:"低料金で楽しめる植物園兼公園。豆汽車やモノレールなどミニ遊具もある。",
+ tip:"入園料が非常に安く、気軽に立ち寄れるのが魅力。"},
+{region:"埼玉", name:"さいたま水族館", area:"羽生市", lat:36.1660, lng:139.5460,
+ ages:["0-1歳","2-3歳","4-6歳","低学年","高学年"], weather:["晴れ","雨"], duration:["半日"],
+ price:"大人730円／小中学生310円", parking:"yes", access:"東武伊勢崎線「羽生」駅からバス20分",
+ baby:"おむつ替えあり", lunch:"館内軽食は少なめ。",
+ officialUrl:"https://www.saitama-suizoku.com/",
+ desc:"利根川水系の淡水魚を中心に展示する内陸型水族館。海のない埼玉ならではの内容。",
+ tip:"隣接するむさしの村と組み合わせて1日プランにもできる。"},
+{region:"埼玉", name:"むさしの村", area:"加須市", lat:36.1520, lng:139.6470,
+ ages:["0-1歳","2-3歳","4-6歳","低学年"], weather:["晴れ"], duration:["1日"],
+ price:"入園＋のりもの放題 大人3000円前後", parking:"yes", access:"東武伊勢崎線「加須」駅からバス20分",
+ baby:"おむつ替えあり", lunch:"園内にレストランあり。",
+ officialUrl:"https://www.musashinomura.co.jp/",
+ desc:"未就学児から乗れる乗り物が多い遊園地。動物ふれあいエリアやプールもある。",
+ tip:"のりもの放題パスがあるので、何度も乗りたい未就学児連れにお得。"},
+{region:"埼玉", name:"所沢航空記念公園", area:"所沢市", lat:35.7920, lng:139.4640,
+ ages:["0-1歳","2-3歳","4-6歳","低学年","高学年"], weather:["晴れ","雨"], duration:["半日"],
+ price:"公園無料／航空発祥記念館 大人520円", parking:"yes", access:"西武線「航空公園」駅から徒歩2分",
+ baby:"おむつ替えあり", lunch:"公園周辺に飲食店あり。",
+ officialUrl:null,
+ desc:"日本初の飛行場跡地にある公園。実機展示のある航空発祥記念館は屋内で雨天も安心。",
+ tip:"駅から近く、電車＋徒歩だけで行けるアクセスの良さが魅力。"},
+{region:"埼玉", name:"川越水上公園", area:"川越市", lat:35.9420, lng:139.4460,
+ ages:["0-1歳","2-3歳","4-6歳","低学年","高学年"], weather:["晴れ"], duration:["半日"],
+ price:"公園無料（プールは夏期有料）", parking:"yes", access:"JR「川越」駅からバス20分",
+ baby:"おむつ替えあり", lunch:"園内に売店あり。",
+ officialUrl:null,
+ desc:"夏はプール、それ以外の季節は広場や遊具で遊べる公園。川越観光の後に立ち寄りやすい。",
+ tip:"プールは夏季限定なので、時期を確認してから訪問を。"},
+
+{region:"茨城", name:"茨城県自然博物館", area:"坂東市", lat:36.0480, lng:139.8890,
+ ages:["0-1歳","2-3歳","4-6歳","低学年","高学年"], weather:["晴れ","雨"], duration:["半日"],
+ price:"大人720円／高校生以下は割引・無料あり", parking:"yes", access:"東武日光線「野田市」駅からバス30分",
+ baby:"おむつ替えあり", lunch:"館内に軽食コーナーあり。",
+ officialUrl:null,
+ desc:"恐竜の骨格標本や自然史の展示が充実した大型博物館。屋外にも観察フィールドがある。",
+ tip:"展示のスケールが大きく恐竜好きの子には特に人気。"},
+{region:"茨城", name:"かみね動物園", area:"日立市", lat:36.5990, lng:140.6680,
+ ages:["0-1歳","2-3歳","4-6歳","低学年","高学年"], weather:["晴れ"], duration:["半日"],
+ price:"大人510円／中学生以下 無料", parking:"yes", access:"JR「日立」駅からバス10分",
+ baby:"おむつ替えあり", lunch:"園内に売店あり。",
+ officialUrl:null,
+ desc:"高台にあり、隣接する遊園地とモノレールで移動できるユニークな動物園。",
+ tip:"眺めが良く、動物園から日立市街や海を見渡せるのも魅力。"},
+{region:"茨城", name:"つくばエキスポセンター", area:"つくば市", lat:36.0830, lng:140.1010,
+ ages:["4-6歳","低学年","高学年"], weather:["晴れ","雨"], duration:["半日"],
+ price:"大人1120円／小中学生600円（プラネタリウム込み）", parking:"yes", access:"つくばエクスプレス「つくば」駅から徒歩5分",
+ baby:"おむつ替えあり", lunch:"つくば駅周辺に飲食店多数。",
+ officialUrl:"https://www.expocenter.or.jp/",
+ desc:"実物大のロケットが目印の科学館。プラネタリウムや体験型展示が揃う。",
+ tip:"つくば駅から徒歩圏内でアクセスが良く、雨の日プランに組み込みやすい。"},
+
+{region:"栃木", name:"那須ハイランドパーク", area:"那須町", lat:37.0330, lng:140.0330,
+ ages:["2-3歳","4-6歳","低学年","高学年"], weather:["晴れ"], duration:["1日"],
+ price:"入園1000円台＋フリーパス4000円台", parking:"yes", access:"東北新幹線「那須塩原」駅からバス50分",
+ baby:"おむつ替えあり", lunch:"園内にレストランあり。",
+ officialUrl:"https://www.nasuhighlandpark.co.jp/",
+ desc:"絶叫系から幼児向けまで幅広い乗り物が揃う那須の遊園地。動物ふれあいエリアもある。",
+ tip:"那須どうぶつ王国と組み合わせて2日プランにする家族も多い。"},
+{region:"栃木", name:"日光江戸村", area:"日光市", lat:36.7480, lng:139.5730,
+ ages:["2-3歳","4-6歳","低学年","高学年"], weather:["晴れ","雨"], duration:["1日"],
+ price:"大人5000円台／子供2600円台", parking:"yes", access:"東武「鬼怒川温泉」駅からバス20分",
+ baby:"おむつ替えあり", lunch:"園内に飲食店多数。",
+ officialUrl:"https://edowonderland.net/",
+ desc:"江戸時代の町並みを再現したテーマパーク。忍者ショーや変身体験が子どもに人気。",
+ tip:"屋内の忍者からくり屋敷などもあり、雨の日でも一部楽しめる。"},
+{region:"栃木", name:"とちのきファミリーランド", area:"宇都宮市", lat:36.5750, lng:139.8580,
+ ages:["0-1歳","2-3歳","4-6歳","低学年"], weather:["晴れ"], duration:["半日"],
+ price:"入園無料（乗り物ごとに有料）", parking:"yes", access:"JR「宇都宮」駅からバス20分",
+ baby:"おむつ替えあり", lunch:"園内に売店あり。",
+ officialUrl:null,
+ desc:"入園無料で乗り物だけ料金がかかる地域密着型の遊園地。動物園も併設。",
+ tip:"料金が手頃で、宇都宮観光のついでに立ち寄りやすい。"},
+
+{region:"群馬", name:"群馬県立ぐんまこどもの国", area:"太田市", lat:36.2960, lng:139.3960,
+ ages:["0-1歳","2-3歳","4-6歳","低学年","高学年"], weather:["晴れ"], duration:["半日","1日"],
+ price:"入園無料（一部施設は有料）", parking:"yes", access:"東武伊勢崎線「治良門橋」駅から徒歩20分",
+ baby:"おむつ替えあり", lunch:"園内に売店あり。",
+ officialUrl:null,
+ desc:"アスレチックや動物ふれあい、天文台まで揃う無料の総合公園。",
+ tip:"敷地が広いので歩きやすい靴と水分補給の準備を。"},
+{region:"群馬", name:"桐生が岡動物園・遊園地", area:"桐生市", lat:36.4180, lng:139.3400,
+ ages:["0-1歳","2-3歳","4-6歳","低学年","高学年"], weather:["晴れ"], duration:["半日"],
+ price:"入園無料（遊園地は乗り物ごとに有料）", parking:"yes", access:"JR「桐生」駅からバス10分",
+ baby:"おむつ替えあり", lunch:"園内売店は少なめ。",
+ officialUrl:null,
+ desc:"無料の動物園と小さな遊園地が隣接するコンパクトな施設。地元で長く愛される定番スポット。",
+ tip:"乗り物料金が非常に安く、コスパの良い遊び場として人気。"},
+{region:"群馬", name:"るなぱあく（前橋中央児童遊園）", area:"前橋市", lat:36.3890, lng:139.0610,
+ ages:["0-1歳","2-3歳","4-6歳","低学年"], weather:["晴れ"], duration:["半日"],
+ price:"入園無料（乗り物1回10〜50円）", parking:"yes", access:"JR「前橋」駅から徒歩15分",
+ baby:"おむつ替えあり", lunch:"公園周辺に飲食店あり。",
+ officialUrl:null,
+ desc:"乗り物1回10円からと激安な昭和レトロ遊園地。木馬や豆汽車など懐かしい乗り物が並ぶ。",
+ tip:"料金の安さが魅力で、未就学児の「初めての遊園地」にもぴったり。"},
+{region:"神奈川", name:"カワスイ 川崎水族館", area:"川崎市幸区", lat:35.533, lng:139.698,
+ ages:["0-1歳","2-3歳","4-6歳","低学年","高学年"], weather:["晴れ","雨"], duration:["半日"],
+ price:"大人2200円台／子供1000円台", parking:"no", access:"JR「川崎」駅直結",
+ baby:"授乳室・おむつ替えあり／ベビーカーOK", lunch:"川崎ルフロン内・駅周辺に飲食店多数。",
+ officialUrl:null,
+ desc:"駅直結のビル内水族館で、天候に関係なく楽しめる。世界の淡水魚や熱帯魚の展示が中心。",
+ tip:"屋内完結型なので雨の日のお出かけ先として重宝する。"},
+{region:"神奈川", name:"はまぎん こども宇宙科学館", area:"横浜市磯子区", lat:35.409, lng:139.621,
+ ages:["2-3歳","4-6歳","低学年","高学年"], weather:["晴れ","雨"], duration:["半日"],
+ price:"大人400円台／子供200円台（プラネタリウム別途）", parking:"yes", access:"JR「洋光台」駅から徒歩3分",
+ baby:"おむつ替えあり／ベビーカーOK", lunch:"館内に軽食コーナーあり。",
+ officialUrl:null,
+ desc:"科学と宇宙をテーマにした体験型展示とプラネタリウムが楽しめる施設。",
+ tip:"プラネタリウムは上映回ごとに定員制、早めのチケット確保がおすすめ。"},
+{region:"神奈川", name:"原鉄道模型博物館", area:"横浜市西区", lat:35.465, lng:139.622,
+ ages:["2-3歳","4-6歳","低学年","高学年"], weather:["晴れ","雨"], duration:["半日"],
+ price:"大人1000円台／子供500円台", parking:"no", access:"JR・東急・京急「横浜」駅から徒歩5分",
+ baby:"おむつ替えあり／ベビーカーOK", lunch:"そごう横浜店など駅周辺に飲食店多数。",
+ officialUrl:null,
+ desc:"精密な鉄道模型の展示と大型ジオラマが名物。電車好きの子どもに人気。",
+ tip:"ジオラマは時間ごとに走行ショーがあるので時刻を確認してから入館を。"},
+{region:"神奈川", name:"川崎市子ども夢パーク", area:"川崎市高津区", lat:35.598, lng:139.618,
+ ages:["0-1歳","2-3歳","4-6歳","低学年"], weather:["晴れ"], duration:["半日"],
+ price:"入園無料", parking:"yes", access:"JR「武蔵溝ノ口」駅からバス10分",
+ baby:"おむつ替えあり／ベビーカーOK", lunch:"周辺にコンビニ・飲食店あり。",
+ officialUrl:null,
+ desc:"泥んこ遊びや工作など「自分の責任で自由に遊ぶ」がコンセプトの冒険遊び場。",
+ tip:"汚れてもいい服装で行くのがおすすめ。着替えを多めに準備すると安心。"},
+{region:"神奈川", name:"東高根森林公園", area:"川崎市宮前区", lat:35.598, lng:139.576,
+ ages:["0-1歳","2-3歳","4-6歳","低学年","高学年"], weather:["晴れ"], duration:["半日"],
+ price:"入園無料", parking:"yes", access:"JR「久地」駅から徒歩15分",
+ baby:"おむつ替えトイレあり／ベビーカーOK", lunch:"園内に売店がある場合あり。周辺の飲食店と組み合わせるのがおすすめ。",
+ officialUrl:null,
+ desc:"遊具や広場のある地域の公園。天候や気分に合わせて気軽に立ち寄れる。",
+ tip:"湿性植物園もあり自然観察にも向く。"},
+{region:"神奈川", name:"等々力緑地", area:"川崎市中原区", lat:35.567, lng:139.658,
+ ages:["0-1歳","2-3歳","4-6歳","低学年","高学年"], weather:["晴れ"], duration:["半日"],
+ price:"入園無料", parking:"yes", access:"JR「武蔵小杉」駅からバス",
+ baby:"おむつ替えトイレあり／ベビーカーOK", lunch:"園内に売店がある場合あり。周辺の飲食店と組み合わせるのがおすすめ。",
+ officialUrl:null,
+ desc:"遊具や広場のある地域の公園。天候や気分に合わせて気軽に立ち寄れる。",
+ tip:"陸上競技場やプールも隣接する総合公園。"},
+{region:"神奈川", name:"夢見ヶ崎動物公園", area:"川崎市幸区", lat:35.539, lng:139.679,
+ ages:["0-1歳","2-3歳","4-6歳","低学年"], weather:["晴れ"], duration:["半日"],
+ price:"入園無料", parking:"no", access:"JR「鹿島田」駅から徒歩15分",
+ baby:"おむつ替えあり", lunch:"周辺に飲食店あり。",
+ officialUrl:null,
+ desc:"無料で入れる小さな動物園がある高台の公園。市街地を見渡せる眺望も魅力。",
+ tip:"無料ながら動物の種類が豊富で、幼児連れの散歩コースに人気。"},
+{region:"神奈川", name:"三ツ池公園", area:"横浜市鶴見区", lat:35.508, lng:139.664,
+ ages:["0-1歳","2-3歳","4-6歳","低学年","高学年"], weather:["晴れ"], duration:["半日"],
+ price:"入園無料", parking:"yes", access:"JR「鶴見」駅からバス",
+ baby:"おむつ替えトイレあり／ベビーカーOK", lunch:"園内に売店がある場合あり。周辺の飲食店と組み合わせるのがおすすめ。",
+ officialUrl:null,
+ desc:"遊具や広場のある地域の公園。天候や気分に合わせて気軽に立ち寄れる。",
+ tip:"桜の名所としても知られる広い公園。"},
+{region:"神奈川", name:"四季の森公園", area:"横浜市緑区", lat:35.51, lng:139.538,
+ ages:["0-1歳","2-3歳","4-6歳","低学年","高学年"], weather:["晴れ"], duration:["半日"],
+ price:"入園無料", parking:"yes", access:"JR「中山」駅から徒歩15分",
+ baby:"おむつ替えトイレあり／ベビーカーOK", lunch:"園内に売店がある場合あり。周辺の飲食店と組み合わせるのがおすすめ。",
+ officialUrl:null,
+ desc:"遊具や広場のある地域の公園。天候や気分に合わせて気軽に立ち寄れる。",
+ tip:"田園風景が残る里山タイプの公園で虫探しにも良い。"},
+{region:"神奈川", name:"横浜市こども自然公園（大池公園）", area:"横浜市旭区", lat:35.487, lng:139.561,
+ ages:["0-1歳","2-3歳","4-6歳","低学年","高学年"], weather:["晴れ"], duration:["半日"],
+ price:"入園無料", parking:"yes", access:"相鉄線「二俣川」駅からバス",
+ baby:"おむつ替えトイレあり／ベビーカーOK", lunch:"園内に売店がある場合あり。周辺の飲食店と組み合わせるのがおすすめ。",
+ officialUrl:null,
+ desc:"遊具や広場のある地域の公園。天候や気分に合わせて気軽に立ち寄れる。",
+ tip:"大きな遊具広場と池のある人気の公園。"},
+{region:"神奈川", name:"舞岡公園", area:"横浜市戸塚区", lat:35.403, lng:139.521,
+ ages:["0-1歳","2-3歳","4-6歳","低学年","高学年"], weather:["晴れ"], duration:["半日"],
+ price:"入園無料", parking:"yes", access:"JR・地下鉄「戸塚」駅からバス",
+ baby:"おむつ替えトイレあり／ベビーカーOK", lunch:"園内に売店がある場合あり。周辺の飲食店と組み合わせるのがおすすめ。",
+ officialUrl:null,
+ desc:"遊具や広場のある地域の公園。天候や気分に合わせて気軽に立ち寄れる。",
+ tip:"田んぼや谷戸の自然が残るのどかな公園。"},
+{region:"神奈川", name:"根岸森林公園", area:"横浜市中区", lat:35.429, lng:139.635,
+ ages:["0-1歳","2-3歳","4-6歳","低学年","高学年"], weather:["晴れ"], duration:["半日"],
+ price:"入園無料", parking:"yes", access:"JR「山手」駅から徒歩15分",
+ baby:"おむつ替えトイレあり／ベビーカーOK", lunch:"園内に売店がある場合あり。周辺の飲食店と組み合わせるのがおすすめ。",
+ officialUrl:null,
+ desc:"遊具や広場のある地域の公園。天候や気分に合わせて気軽に立ち寄れる。",
+ tip:"旧競馬場の広い芝生広場がありボール遊びもしやすい。"},
+{region:"神奈川", name:"横浜公園", area:"横浜市中区", lat:35.444, lng:139.64,
+ ages:["0-1歳","2-3歳","4-6歳","低学年","高学年"], weather:["晴れ"], duration:["半日"],
+ price:"入園無料", parking:"yes", access:"みなとみらい線「日本大通り」駅すぐ",
+ baby:"おむつ替えトイレあり／ベビーカーOK", lunch:"園内に売店がある場合あり。周辺の飲食店と組み合わせるのがおすすめ。",
+ officialUrl:null,
+ desc:"遊具や広場のある地域の公園。天候や気分に合わせて気軽に立ち寄れる。",
+ tip:"チューリップの名所。中華街や関内エリアと組み合わせやすい。"},
+{region:"神奈川", name:"岸根公園", area:"横浜市港北区", lat:35.517, lng:139.626,
+ ages:["0-1歳","2-3歳","4-6歳","低学年","高学年"], weather:["晴れ"], duration:["半日"],
+ price:"入園無料", parking:"yes", access:"市営地下鉄「岸根公園」駅すぐ",
+ baby:"おむつ替えトイレあり／ベビーカーOK", lunch:"園内に売店がある場合あり。周辺の飲食店と組み合わせるのがおすすめ。",
+ officialUrl:null,
+ desc:"遊具や広場のある地域の公園。天候や気分に合わせて気軽に立ち寄れる。",
+ tip:"駅近でアクセスしやすい広い芝生公園。"},
+{region:"神奈川", name:"新横浜公園", area:"横浜市港北区", lat:35.509, lng:139.611,
+ ages:["0-1歳","2-3歳","4-6歳","低学年","高学年"], weather:["晴れ"], duration:["半日"],
+ price:"入園無料", parking:"yes", access:"市営地下鉄「新横浜」駅から徒歩15分",
+ baby:"おむつ替えトイレあり／ベビーカーOK", lunch:"園内に売店がある場合あり。周辺の飲食店と組み合わせるのがおすすめ。",
+ officialUrl:null,
+ desc:"遊具や広場のある地域の公園。天候や気分に合わせて気軽に立ち寄れる。",
+ tip:"日産スタジアム隣接。広い芝生でのびのび遊べる。"},
+{region:"神奈川", name:"県立三ツ沢公園", area:"横浜市神奈川区", lat:35.47, lng:139.606,
+ ages:["0-1歳","2-3歳","4-6歳","低学年","高学年"], weather:["晴れ"], duration:["半日"],
+ price:"入園無料", parking:"yes", access:"横浜市営地下鉄「三ツ沢下町」駅から徒歩10分",
+ baby:"おむつ替えトイレあり／ベビーカーOK", lunch:"園内に売店がある場合あり。周辺の飲食店と組み合わせるのがおすすめ。",
+ officialUrl:null,
+ desc:"遊具や広場のある地域の公園。天候や気分に合わせて気軽に立ち寄れる。",
+ tip:"競技場を中心に緑豊かな高台の公園。"},
+{region:"神奈川", name:"引地川親水公園", area:"藤沢市", lat:35.352, lng:139.462,
+ ages:["0-1歳","2-3歳","4-6歳","低学年","高学年"], weather:["晴れ"], duration:["半日"],
+ price:"入園無料", parking:"yes", access:"小田急線「六会日大前」駅からバス",
+ baby:"おむつ替えトイレあり／ベビーカーOK", lunch:"園内に売店がある場合あり。周辺の飲食店と組み合わせるのがおすすめ。",
+ officialUrl:null,
+ desc:"遊具や広場のある地域の公園。天候や気分に合わせて気軽に立ち寄れる。",
+ tip:"川沿いの遊歩道とじゃぶじゃぶ池が人気。"},
+{region:"神奈川", name:"辻堂海浜公園（湘南海岸公園）", area:"藤沢市", lat:35.326, lng:139.457,
+ ages:["0-1歳","2-3歳","4-6歳","低学年","高学年"], weather:["晴れ"], duration:["半日"],
+ price:"入園無料", parking:"yes", access:"JR「辻堂」駅から徒歩15分",
+ baby:"おむつ替えトイレあり／ベビーカーOK", lunch:"園内に売店がある場合あり。周辺の飲食店と組み合わせるのがおすすめ。",
+ officialUrl:null,
+ desc:"遊具や広場のある地域の公園。天候や気分に合わせて気軽に立ち寄れる。",
+ tip:"交通公園やアスレチックのある海辺の公園。"},
+{region:"神奈川", name:"鎌倉海浜公園", area:"鎌倉市", lat:35.307, lng:139.533,
+ ages:["0-1歳","2-3歳","4-6歳","低学年","高学年"], weather:["晴れ"], duration:["半日"],
+ price:"入園無料", parking:"yes", access:"江ノ電「稲村ヶ崎」駅から徒歩5分",
+ baby:"おむつ替えトイレあり／ベビーカーOK", lunch:"園内に売店がある場合あり。周辺の飲食店と組み合わせるのがおすすめ。",
+ officialUrl:null,
+ desc:"遊具や広場のある地域の公園。天候や気分に合わせて気軽に立ち寄れる。",
+ tip:"由比ヶ浜に近く、海遊びとセットで楽しめる。"},
+{region:"神奈川", name:"荒崎公園", area:"横須賀市", lat:35.201, lng:139.626,
+ ages:["0-1歳","2-3歳","4-6歳","低学年","高学年"], weather:["晴れ"], duration:["半日"],
+ price:"入園無料", parking:"yes", access:"京急線「三崎口」駅からバス",
+ baby:"おむつ替えトイレあり／ベビーカーOK", lunch:"園内に売店がある場合あり。周辺の飲食店と組み合わせるのがおすすめ。",
+ officialUrl:null,
+ desc:"遊具や広場のある地域の公園。天候や気分に合わせて気軽に立ち寄れる。",
+ tip:"岩場の磯遊びができる自然豊かな海岸公園。"},
+{region:"神奈川", name:"相模原公園", area:"相模原市南区", lat:35.539, lng:139.399,
+ ages:["0-1歳","2-3歳","4-6歳","低学年","高学年"], weather:["晴れ"], duration:["半日"],
+ price:"入園無料", parking:"yes", access:"小田急線「相模大野」駅からバス",
+ baby:"おむつ替えトイレあり／ベビーカーOK", lunch:"園内に売店がある場合あり。周辺の飲食店と組み合わせるのがおすすめ。",
+ officialUrl:null,
+ desc:"遊具や広場のある地域の公園。天候や気分に合わせて気軽に立ち寄れる。",
+ tip:"四季の花と大きな噴水広場が楽しめる公園。"},
+{region:"神奈川", name:"七沢森林公園", area:"厚木市", lat:35.452, lng:139.29,
+ ages:["0-1歳","2-3歳","4-6歳","低学年","高学年"], weather:["晴れ"], duration:["半日"],
+ price:"入園無料", parking:"yes", access:"小田急線「本厚木」駅からバス",
+ baby:"おむつ替えトイレあり／ベビーカーOK", lunch:"園内に売店がある場合あり。周辺の飲食店と組み合わせるのがおすすめ。",
+ officialUrl:null,
+ desc:"遊具や広場のある地域の公園。天候や気分に合わせて気軽に立ち寄れる。",
+ tip:"アスレチック遊具と展望台がある自然豊かな公園。"},
+{region:"神奈川", name:"厚木市子ども科学館", area:"厚木市", lat:35.442, lng:139.363,
+ ages:["2-3歳","4-6歳","低学年","高学年"], weather:["晴れ","雨"], duration:["半日"],
+ price:"大人400円台／子供無料〜低額", parking:"yes", access:"小田急線「本厚木」駅から徒歩15分",
+ baby:"おむつ替えあり", lunch:"周辺に飲食店あり。",
+ officialUrl:null,
+ desc:"プラネタリウムと科学展示が楽しめる地域密着型の科学館。",
+ tip:"プラネタリウムは上映時間が決まっているので事前確認を。"},
+{region:"神奈川", name:"茅ヶ崎里山公園", area:"茅ヶ崎市", lat:35.366, lng:139.409,
+ ages:["0-1歳","2-3歳","4-6歳","低学年","高学年"], weather:["晴れ"], duration:["半日"],
+ price:"入園無料", parking:"yes", access:"JR「香川」駅から徒歩15分",
+ baby:"おむつ替えトイレあり／ベビーカーOK", lunch:"園内に売店がある場合あり。周辺の飲食店と組み合わせるのがおすすめ。",
+ officialUrl:null,
+ desc:"遊具や広場のある地域の公園。天候や気分に合わせて気軽に立ち寄れる。",
+ tip:"田園と雑木林が残る里山エリア。虫取りに人気。"},
+{region:"神奈川", name:"平塚市総合公園", area:"平塚市", lat:35.335, lng:139.339,
+ ages:["0-1歳","2-3歳","4-6歳","低学年","高学年"], weather:["晴れ"], duration:["半日"],
+ price:"入園無料", parking:"yes", access:"JR「平塚」駅からバス",
+ baby:"おむつ替えトイレあり／ベビーカーOK", lunch:"園内に売店がある場合あり。周辺の飲食店と組み合わせるのがおすすめ。",
+ officialUrl:null,
+ desc:"遊具や広場のある地域の公園。天候や気分に合わせて気軽に立ち寄れる。",
+ tip:"大型遊具とスポーツ施設がそろう総合公園。"},
+{region:"神奈川", name:"湘南平", area:"平塚市", lat:35.326, lng:139.315,
+ ages:["0-1歳","2-3歳","4-6歳","低学年","高学年"], weather:["晴れ"], duration:["半日"],
+ price:"入園無料", parking:"yes", access:"JR「平塚」駅からバス",
+ baby:"おむつ替えトイレあり／ベビーカーOK", lunch:"園内に売店がある場合あり。周辺の飲食店と組み合わせるのがおすすめ。",
+ officialUrl:null,
+ desc:"遊具や広場のある地域の公園。天候や気分に合わせて気軽に立ち寄れる。",
+ tip:"展望台からの眺めが良く、家族でのハイキングに人気。"},
+{region:"神奈川", name:"県立生命の星・地球博物館", area:"小田原市", lat:35.235, lng:139.117,
+ ages:["4-6歳","低学年","高学年"], weather:["晴れ","雨"], duration:["半日"],
+ price:"大人520円程度／高校生以下 無料", parking:"yes", access:"箱根登山鉄道「入生田」駅から徒歩3分",
+ baby:"おむつ替えあり／ベビーカーOK", lunch:"館内にレストランあり。",
+ officialUrl:null,
+ desc:"恐竜の骨格標本や鉱物など地球の歴史をテーマにした展示が充実。",
+ tip:"館内は広く見ごたえがあるため、半日はゆっくり時間を取りたい。"},
+{region:"神奈川", name:"泉の森", area:"大和市", lat:35.456, lng:139.459,
+ ages:["0-1歳","2-3歳","4-6歳","低学年","高学年"], weather:["晴れ"], duration:["半日"],
+ price:"入園無料", parking:"yes", access:"小田急線「大和」駅からバス",
+ baby:"おむつ替えトイレあり／ベビーカーOK", lunch:"園内に売店がある場合あり。周辺の飲食店と組み合わせるのがおすすめ。",
+ officialUrl:null,
+ desc:"遊具や広場のある地域の公園。天候や気分に合わせて気軽に立ち寄れる。",
+ tip:"湧水と池のある自然豊かな公園。県内屈指の広さ。"},
+{region:"神奈川", name:"県立座間谷戸山公園", area:"座間市", lat:35.487, lng:139.399,
+ ages:["0-1歳","2-3歳","4-6歳","低学年","高学年"], weather:["晴れ"], duration:["半日"],
+ price:"入園無料", parking:"yes", access:"小田急線「座間」駅から徒歩15分",
+ baby:"おむつ替えトイレあり／ベビーカーOK", lunch:"園内に売店がある場合あり。周辺の飲食店と組み合わせるのがおすすめ。",
+ officialUrl:null,
+ desc:"遊具や広場のある地域の公園。天候や気分に合わせて気軽に立ち寄れる。",
+ tip:"谷戸地形を生かした自然観察に向く公園。"},
+{region:"神奈川", name:"神奈川県立フラワーセンター大船植物園", area:"鎌倉市", lat:35.354, lng:139.531,
+ ages:["0-1歳","2-3歳","4-6歳","低学年"], weather:["晴れ"], duration:["半日"],
+ price:"大人400円程度／中学生以下 無料", parking:"yes", access:"JR「大船」駅から徒歩10分",
+ baby:"おむつ替えあり／ベビーカーOK", lunch:"周辺に飲食店あり。",
+ officialUrl:null,
+ desc:"四季の花々が楽しめる植物園。バラ園が特に有名で散策しやすい広さ。",
+ tip:"ベビーカーで回りやすい舗装路が多く、乳幼児連れの散歩にも向く。"},
+{region:"神奈川", name:"くりはま花の国", area:"横須賀市", lat:35.245, lng:139.687,
+ ages:["0-1歳","2-3歳","4-6歳","低学年","高学年"], weather:["晴れ"], duration:["半日"],
+ price:"入園無料", parking:"yes", access:"京急線「京急久里浜」駅から徒歩15分",
+ baby:"おむつ替えトイレあり／ベビーカーOK", lunch:"園内に売店がある場合あり。周辺の飲食店と組み合わせるのがおすすめ。",
+ officialUrl:null,
+ desc:"遊具や広場のある地域の公園。天候や気分に合わせて気軽に立ち寄れる。",
+ tip:"ポピー・コスモスなど季節の花畑とローラーすべり台が人気。"},
+{region:"神奈川", name:"秦野戸川公園", area:"秦野市", lat:35.367, lng:139.165,
+ ages:["0-1歳","2-3歳","4-6歳","低学年","高学年"], weather:["晴れ"], duration:["半日"],
+ price:"入園無料", parking:"yes", access:"小田急線「渋沢」駅からバス",
+ baby:"おむつ替えトイレあり／ベビーカーOK", lunch:"園内に売店がある場合あり。周辺の飲食店と組み合わせるのがおすすめ。",
+ officialUrl:null,
+ desc:"遊具や広場のある地域の公園。天候や気分に合わせて気軽に立ち寄れる。",
+ tip:"水遊び場と大型遊具が揃う丹沢のふもとの公園。"},
+{region:"神奈川", name:"三溪園", area:"横浜市中区", lat:35.42, lng:139.665,
+ ages:["4-6歳","低学年","高学年"], weather:["晴れ"], duration:["半日"],
+ price:"大人900円程度／小中学生200円程度", parking:"yes", access:"JR「根岸」駅からバス",
+ baby:"おむつ替えあり／ベビーカーOK（一部庭園路は不向き）", lunch:"園内に茶店あり。",
+ officialUrl:null,
+ desc:"歴史的建造物が点在する日本庭園。四季の自然散策を楽しめる。",
+ tip:"未就学児にはやや静かな雰囲気なので、散策メインの日にゆっくり訪れたい。"},
+{region:"神奈川", name:"海老名運動公園", area:"海老名市", lat:35.447, lng:139.392,
+ ages:["0-1歳","2-3歳","4-6歳","低学年","高学年"], weather:["晴れ"], duration:["半日"],
+ price:"入園無料", parking:"yes", access:"小田急線「海老名」駅からバス",
+ baby:"おむつ替えトイレあり／ベビーカーOK", lunch:"園内に売店がある場合あり。周辺の飲食店と組み合わせるのがおすすめ。",
+ officialUrl:null,
+ desc:"遊具や広場のある地域の公園。天候や気分に合わせて気軽に立ち寄れる。",
+ tip:"広い芝生とスポーツ施設が揃う総合公園。"},
+{region:"神奈川", name:"寒川町一之宮公園", area:"高座郡寒川町", lat:35.381, lng:139.373,
+ ages:["0-1歳","2-3歳","4-6歳","低学年","高学年"], weather:["晴れ"], duration:["半日"],
+ price:"入園無料", parking:"yes", access:"JR相模線「宮山」駅から徒歩10分",
+ baby:"おむつ替えトイレあり／ベビーカーOK", lunch:"園内に売店がある場合あり。周辺の飲食店と組み合わせるのがおすすめ。",
+ officialUrl:null,
+ desc:"遊具や広場のある地域の公園。天候や気分に合わせて気軽に立ち寄れる。",
+ tip:"神社に隣接する落ち着いた雰囲気の公園。"},
+{region:"神奈川", name:"大磯城山公園", area:"中郡大磯町", lat:35.308, lng:139.308,
+ ages:["0-1歳","2-3歳","4-6歳","低学年","高学年"], weather:["晴れ"], duration:["半日"],
+ price:"入園無料", parking:"yes", access:"JR「大磯」駅からバス",
+ baby:"おむつ替えトイレあり／ベビーカーOK", lunch:"園内に売店がある場合あり。周辺の飲食店と組み合わせるのがおすすめ。",
+ officialUrl:null,
+ desc:"遊具や広場のある地域の公園。天候や気分に合わせて気軽に立ち寄れる。",
+ tip:"旧邸園を生かした緑豊かな公園。展望台からの眺めも良い。"},
+{region:"神奈川", name:"富士見公園", area:"川崎市川崎区", lat:35.53, lng:139.704,
+ ages:["0-1歳","2-3歳","4-6歳","低学年","高学年"], weather:["晴れ"], duration:["半日"],
+ price:"入園無料", parking:"yes", access:"JR「川崎」駅から徒歩15分",
+ baby:"おむつ替えトイレあり／ベビーカーOK", lunch:"園内に売店がある場合あり。周辺の飲食店と組み合わせるのがおすすめ。",
+ officialUrl:null,
+ desc:"遊具や広場のある地域の公園。天候や気分に合わせて気軽に立ち寄れる。",
+ tip:"市街地にある競技場併設の公園。アクセスが良い。"},
+{region:"神奈川", name:"保土ケ谷公園", area:"横浜市保土ケ谷区", lat:35.447, lng:139.584,
+ ages:["0-1歳","2-3歳","4-6歳","低学年","高学年"], weather:["晴れ"], duration:["半日"],
+ price:"入園無料", parking:"yes", access:"相鉄線「和田町」駅から徒歩15分",
+ baby:"おむつ替えトイレあり／ベビーカーOK", lunch:"園内に売店がある場合あり。周辺の飲食店と組み合わせるのがおすすめ。",
+ officialUrl:null,
+ desc:"遊具や広場のある地域の公園。天候や気分に合わせて気軽に立ち寄れる。",
+ tip:"大きな遊具広場とスポーツ施設が揃う公園。"},
+{region:"神奈川", name:"中原平和公園", area:"川崎市中原区", lat:35.576, lng:139.658,
+ ages:["0-1歳","2-3歳","4-6歳","低学年","高学年"], weather:["晴れ"], duration:["半日"],
+ price:"入園無料", parking:"yes", access:"JR「武蔵中原」駅から徒歩10分",
+ baby:"おむつ替えトイレあり／ベビーカーOK", lunch:"園内に売店がある場合あり。周辺の飲食店と組み合わせるのがおすすめ。",
+ officialUrl:null,
+ desc:"遊具や広場のある地域の公園。天候や気分に合わせて気軽に立ち寄れる。",
+ tip:"住宅街の中にある落ち着いた雰囲気の公園。"},
+{region:"神奈川", name:"花菜ガーデン", area:"平塚市", lat:35.367, lng:139.316,
+ ages:["0-1歳","2-3歳","4-6歳","低学年"], weather:["晴れ"], duration:["半日"],
+ price:"大人400円程度／中学生以下 無料", parking:"yes", access:"JR「平塚」駅からバス",
+ baby:"おむつ替えあり／ベビーカーOK", lunch:"園内にカフェあり。",
+ officialUrl:null,
+ desc:"四季の花畑と広い芝生広場がある県立の農業公園。",
+ tip:"季節ごとに花のイベントが開催されるので事前に開花状況を確認すると良い。"},
+{region:"神奈川", name:"大和ゆとりの森", area:"大和市", lat:35.478, lng:139.468,
+ ages:["0-1歳","2-3歳","4-6歳","低学年","高学年"], weather:["晴れ"], duration:["半日"],
+ price:"入園無料", parking:"yes", access:"小田急江ノ島線「桜ヶ丘」駅からバス",
+ baby:"おむつ替えトイレあり／ベビーカーOK", lunch:"園内に売店がある場合あり。周辺の飲食店と組み合わせるのがおすすめ。",
+ officialUrl:null,
+ desc:"遊具や広場のある地域の公園。天候や気分に合わせて気軽に立ち寄れる。",
+ tip:"水遊び場やアスレチックが揃う比較的新しい公園。"},
+{region:"神奈川", name:"追浜公園", area:"横須賀市", lat:35.305, lng:139.639,
+ ages:["0-1歳","2-3歳","4-6歳","低学年","高学年"], weather:["晴れ"], duration:["半日"],
+ price:"入園無料", parking:"yes", access:"京急線「追浜」駅から徒歩10分",
+ baby:"おむつ替えトイレあり／ベビーカーOK", lunch:"園内に売店がある場合あり。周辺の飲食店と組み合わせるのがおすすめ。",
+ officialUrl:null,
+ desc:"遊具や広場のある地域の公園。天候や気分に合わせて気軽に立ち寄れる。",
+ tip:"住宅街にある遊具中心の公園。"},
+{region:"神奈川", name:"三笠公園", area:"横須賀市", lat:35.281, lng:139.672,
+ ages:["0-1歳","2-3歳","4-6歳","低学年","高学年"], weather:["晴れ"], duration:["半日"],
+ price:"入園無料", parking:"yes", access:"京急線「横須賀中央」駅から徒歩15分",
+ baby:"おむつ替えトイレあり／ベビーカーOK", lunch:"園内に売店がある場合あり。周辺の飲食店と組み合わせるのがおすすめ。",
+ officialUrl:null,
+ desc:"遊具や広場のある地域の公園。天候や気分に合わせて気軽に立ち寄れる。",
+ tip:"海に面した公園で記念艦三笠の見学もできる。"},
+{region:"東京", name:"駒沢オリンピック公園", area:"世田谷区", lat:35.621, lng:139.657,
+ ages:["0-1歳","2-3歳","4-6歳","低学年","高学年"], weather:["晴れ"], duration:["半日"],
+ price:"入園無料", parking:"yes", access:"東急田園都市線「駒沢大学」駅から徒歩15分",
+ baby:"おむつ替えトイレあり／ベビーカーOK", lunch:"園内に売店がある場合あり。周辺の飲食店と組み合わせるのがおすすめ。",
+ officialUrl:null,
+ desc:"遊具や広場のある地域の公園。天候や気分に合わせて気軽に立ち寄れる。",
+ tip:"サイクリングコースや大きな広場がある総合公園。"},
+{region:"東京", name:"神代植物公園", area:"調布市", lat:35.666, lng:139.547,
+ ages:["0-1歳","2-3歳","4-6歳","低学年","高学年"], weather:["晴れ"], duration:["半日"],
+ price:"入園無料", parking:"yes", access:"京王線「調布」駅からバス",
+ baby:"おむつ替えトイレあり／ベビーカーOK", lunch:"園内に売店がある場合あり。周辺の飲食店と組み合わせるのがおすすめ。",
+ officialUrl:null,
+ desc:"遊具や広場のある地域の公園。天候や気分に合わせて気軽に立ち寄れる。",
+ tip:"バラ園と大きな温室がある都内屈指の植物公園。"},
+{region:"東京", name:"六義園", area:"文京区", lat:35.728, lng:139.748,
+ ages:["4-6歳","低学年","高学年"], weather:["晴れ"], duration:["半日"],
+ price:"入園無料", parking:"yes", access:"JR「駒込」駅から徒歩7分",
+ baby:"おむつ替えトイレあり／ベビーカーOK", lunch:"園内に売店がある場合あり。周辺の飲食店と組み合わせるのがおすすめ。",
+ officialUrl:null,
+ desc:"遊具や広場のある地域の公園。天候や気分に合わせて気軽に立ち寄れる。",
+ tip:"回遊式の日本庭園。四季の景観をゆったり楽しめる。"},
+{region:"東京", name:"小石川後楽園", area:"文京区", lat:35.706, lng:139.75,
+ ages:["4-6歳","低学年","高学年"], weather:["晴れ"], duration:["半日"],
+ price:"入園無料", parking:"yes", access:"JR「水道橋」駅から徒歩8分",
+ baby:"おむつ替えトイレあり／ベビーカーOK", lunch:"園内に売店がある場合あり。周辺の飲食店と組み合わせるのがおすすめ。",
+ officialUrl:null,
+ desc:"遊具や広場のある地域の公園。天候や気分に合わせて気軽に立ち寄れる。",
+ tip:"都心にある歴史ある日本庭園。散策向きの広さ。"},
+{region:"東京", name:"お台場海浜公園", area:"港区", lat:35.63, lng:139.774,
+ ages:["0-1歳","2-3歳","4-6歳","低学年","高学年"], weather:["晴れ"], duration:["半日"],
+ price:"入園無料", parking:"yes", access:"ゆりかもめ「お台場海浜公園」駅すぐ",
+ baby:"おむつ替えトイレあり／ベビーカーOK", lunch:"園内に売店がある場合あり。周辺の飲食店と組み合わせるのがおすすめ。",
+ officialUrl:null,
+ desc:"遊具や広場のある地域の公園。天候や気分に合わせて気軽に立ち寄れる。",
+ tip:"人工のビーチがあり水遊びも楽しめる都心の公園。"},
+{region:"東京", name:"有明親水海浜公園", area:"江東区", lat:35.628, lng:139.794,
+ ages:["0-1歳","2-3歳","4-6歳","低学年","高学年"], weather:["晴れ"], duration:["半日"],
+ price:"入園無料", parking:"yes", access:"ゆりかもめ「有明」駅から徒歩7分",
+ baby:"おむつ替えトイレあり／ベビーカーOK", lunch:"園内に売店がある場合あり。周辺の飲食店と組み合わせるのがおすすめ。",
+ officialUrl:null,
+ desc:"遊具や広場のある地域の公園。天候や気分に合わせて気軽に立ち寄れる。",
+ tip:"静かな入り江で磯遊びのような体験ができる。"},
+{region:"東京", name:"石神井公園", area:"練馬区", lat:35.744, lng:139.598,
+ ages:["0-1歳","2-3歳","4-6歳","低学年","高学年"], weather:["晴れ"], duration:["半日"],
+ price:"入園無料", parking:"yes", access:"西武池袋線「石神井公園」駅から徒歩7分",
+ baby:"おむつ替えトイレあり／ベビーカーOK", lunch:"園内に売店がある場合あり。周辺の飲食店と組み合わせるのがおすすめ。",
+ officialUrl:null,
+ desc:"遊具や広場のある地域の公園。天候や気分に合わせて気軽に立ち寄れる。",
+ tip:"池を中心にした緑豊かな公園。ボート遊びもできる。"},
+{region:"東京", name:"善福寺公園", area:"杉並区", lat:35.715, lng:139.588,
+ ages:["0-1歳","2-3歳","4-6歳","低学年","高学年"], weather:["晴れ"], duration:["半日"],
+ price:"入園無料", parking:"yes", access:"JR「西荻窪」駅からバス",
+ baby:"おむつ替えトイレあり／ベビーカーOK", lunch:"園内に売店がある場合あり。周辺の飲食店と組み合わせるのがおすすめ。",
+ officialUrl:null,
+ desc:"遊具や広場のある地域の公園。天候や気分に合わせて気軽に立ち寄れる。",
+ tip:"池のある静かな公園で散策やピクニックに向く。"},
+{region:"東京", name:"平和の森公園", area:"中野区", lat:35.715, lng:139.662,
+ ages:["0-1歳","2-3歳","4-6歳","低学年","高学年"], weather:["晴れ"], duration:["半日"],
+ price:"入園無料", parking:"yes", access:"東京メトロ「新中野」駅からバス",
+ baby:"おむつ替えトイレあり／ベビーカーOK", lunch:"園内に売店がある場合あり。周辺の飲食店と組み合わせるのがおすすめ。",
+ officialUrl:null,
+ desc:"遊具や広場のある地域の公園。天候や気分に合わせて気軽に立ち寄れる。",
+ tip:"大型遊具のある比較的広めの区立公園。"},
+{region:"東京", name:"東京都立野川公園", area:"調布市・三鷹市", lat:35.681, lng:139.541,
+ ages:["0-1歳","2-3歳","4-6歳","低学年","高学年"], weather:["晴れ"], duration:["半日"],
+ price:"入園無料", parking:"yes", access:"京王線「調布」駅からバス",
+ baby:"おむつ替えトイレあり／ベビーカーOK", lunch:"園内に売店がある場合あり。周辺の飲食店と組み合わせるのがおすすめ。",
+ officialUrl:null,
+ desc:"遊具や広場のある地域の公園。天候や気分に合わせて気軽に立ち寄れる。",
+ tip:"広い芝生と自然観察園がある落ち着いた公園。"},
+{region:"東京", name:"浮間公園", area:"北区", lat:35.786, lng:139.669,
+ ages:["0-1歳","2-3歳","4-6歳","低学年","高学年"], weather:["晴れ"], duration:["半日"],
+ price:"入園無料", parking:"yes", access:"JR「北赤羽」駅から徒歩10分",
+ baby:"おむつ替えトイレあり／ベビーカーOK", lunch:"園内に売店がある場合あり。周辺の飲食店と組み合わせるのがおすすめ。",
+ officialUrl:null,
+ desc:"遊具や広場のある地域の公園。天候や気分に合わせて気軽に立ち寄れる。",
+ tip:"池のある比較的静かな区立公園。"},
+{region:"東京", name:"羽根木公園", area:"世田谷区", lat:35.665, lng:139.644,
+ ages:["0-1歳","2-3歳","4-6歳","低学年","高学年"], weather:["晴れ"], duration:["半日"],
+ price:"入園無料", parking:"yes", access:"小田急線「梅ヶ丘」駅から徒歩5分",
+ baby:"おむつ替えトイレあり／ベビーカーOK", lunch:"園内に売店がある場合あり。周辺の飲食店と組み合わせるのがおすすめ。",
+ officialUrl:null,
+ desc:"遊具や広場のある地域の公園。天候や気分に合わせて気軽に立ち寄れる。",
+ tip:"梅林とプレーパーク（冒険遊び場）が人気。"},
+{region:"埼玉", name:"埼玉県立川の博物館", area:"大里郡寄居町", lat:36.115, lng:139.19,
+ ages:["0-1歳","2-3歳","4-6歳","低学年"], weather:["晴れ","雨"], duration:["半日"],
+ price:"大人400円程度／高校生以下 無料", parking:"yes", access:"東武東上線「鉢形」駅から徒歩30分",
+ baby:"おむつ替えあり／ベビーカーOK", lunch:"館内に軽食コーナーあり。",
+ officialUrl:null,
+ desc:"川と水をテーマにした体験型博物館。屋外の水遊び場（夏季）も人気。",
+ tip:"夏場は水遊びができるエリアがあるので着替えを持参すると安心。"},
+{region:"埼玉", name:"秩父ミューズパーク", area:"秩父市", lat:35.995, lng:139.086,
+ ages:["0-1歳","2-3歳","4-6歳","低学年","高学年"], weather:["晴れ"], duration:["半日"],
+ price:"入園無料", parking:"yes", access:"西武秩父線「西武秩父」駅からバス",
+ baby:"おむつ替えトイレあり／ベビーカーOK", lunch:"園内に売店がある場合あり。周辺の飲食店と組み合わせるのがおすすめ。",
+ officialUrl:null,
+ desc:"遊具や広場のある地域の公園。天候や気分に合わせて気軽に立ち寄れる。",
+ tip:"スポーツ施設と展望台のある自然豊かな公園。"},
+{region:"埼玉", name:"さきたま古墳公園", area:"行田市", lat:36.14, lng:139.459,
+ ages:["0-1歳","2-3歳","4-6歳","低学年","高学年"], weather:["晴れ"], duration:["半日"],
+ price:"入園無料", parking:"yes", access:"JR「行田」駅からバス",
+ baby:"おむつ替えトイレあり／ベビーカーOK", lunch:"園内に売店がある場合あり。周辺の飲食店と組み合わせるのがおすすめ。",
+ officialUrl:null,
+ desc:"遊具や広場のある地域の公園。天候や気分に合わせて気軽に立ち寄れる。",
+ tip:"古墳群の広場を散策しながら遊べる公園。"},
+{region:"埼玉", name:"彩湖・道満グリーンパーク", area:"戸田市", lat:35.818, lng:139.664,
+ ages:["0-1歳","2-3歳","4-6歳","低学年","高学年"], weather:["晴れ"], duration:["半日"],
+ price:"入園無料", parking:"yes", access:"JR「北戸田」駅から徒歩15分",
+ baby:"おむつ替えトイレあり／ベビーカーOK", lunch:"園内に売店がある場合あり。周辺の飲食店と組み合わせるのがおすすめ。",
+ officialUrl:null,
+ desc:"遊具や広場のある地域の公園。天候や気分に合わせて気軽に立ち寄れる。",
+ tip:"広い芝生広場とサイクリングコースが人気。"},
+{region:"埼玉", name:"加須はなさき公園", area:"加須市", lat:36.129, lng:139.619,
+ ages:["0-1歳","2-3歳","4-6歳","低学年","高学年"], weather:["晴れ"], duration:["半日"],
+ price:"入園無料", parking:"yes", access:"東武伊勢崎線「加須」駅からバス",
+ baby:"おむつ替えトイレあり／ベビーカーOK", lunch:"園内に売店がある場合あり。周辺の飲食店と組み合わせるのがおすすめ。",
+ officialUrl:null,
+ desc:"遊具や広場のある地域の公園。天候や気分に合わせて気軽に立ち寄れる。",
+ tip:"大型遊具のある比較的新しい公園。"},
+{region:"埼玉", name:"岩槻城址公園", area:"さいたま市岩槻区", lat:35.944, lng:139.687,
+ ages:["0-1歳","2-3歳","4-6歳","低学年","高学年"], weather:["晴れ"], duration:["半日"],
+ price:"入園無料", parking:"yes", access:"東武アーバンパークライン「岩槻」駅から徒歩15分",
+ baby:"おむつ替えトイレあり／ベビーカーOK", lunch:"園内に売店がある場合あり。周辺の飲食店と組み合わせるのがおすすめ。",
+ officialUrl:null,
+ desc:"遊具や広場のある地域の公園。天候や気分に合わせて気軽に立ち寄れる。",
+ tip:"お堀と緑に囲まれた歴史公園。"},
+{region:"埼玉", name:"羽生水郷公園", area:"羽生市", lat:36.172, lng:139.551,
+ ages:["0-1歳","2-3歳","4-6歳","低学年","高学年"], weather:["晴れ"], duration:["半日"],
+ price:"入園無料", parking:"yes", access:"東武伊勢崎線「羽生」駅からバス",
+ baby:"おむつ替えトイレあり／ベビーカーOK", lunch:"園内に売店がある場合あり。周辺の飲食店と組み合わせるのがおすすめ。",
+ officialUrl:null,
+ desc:"遊具や広場のある地域の公園。天候や気分に合わせて気軽に立ち寄れる。",
+ tip:"水郷風景の中で遊べる広い公園。"},
+{region:"埼玉", name:"熊谷スポーツ文化公園", area:"熊谷市", lat:36.169, lng:139.362,
+ ages:["0-1歳","2-3歳","4-6歳","低学年","高学年"], weather:["晴れ"], duration:["半日"],
+ price:"入園無料", parking:"yes", access:"JR「熊谷」駅からバス",
+ baby:"おむつ替えトイレあり／ベビーカーOK", lunch:"園内に売店がある場合あり。周辺の飲食店と組み合わせるのがおすすめ。",
+ officialUrl:null,
+ desc:"遊具や広場のある地域の公園。天候や気分に合わせて気軽に立ち寄れる。",
+ tip:"陸上競技場やラグビー場を中心にした広大な公園。"},
+{region:"埼玉", name:"巾着田曼珠沙華公園", area:"日高市", lat:35.902, lng:139.326,
+ ages:["0-1歳","2-3歳","4-6歳","低学年","高学年"], weather:["晴れ"], duration:["半日"],
+ price:"入園無料", parking:"yes", access:"西武池袋線「高麗」駅から徒歩15分",
+ baby:"おむつ替えトイレあり／ベビーカーOK", lunch:"園内に売店がある場合あり。周辺の飲食店と組み合わせるのがおすすめ。",
+ officialUrl:null,
+ desc:"遊具や広場のある地域の公園。天候や気分に合わせて気軽に立ち寄れる。",
+ tip:"川沿いの散策と季節の花畑が楽しめる公園。"},
+{region:"千葉", name:"千葉ポートパーク", area:"千葉市中央区", lat:35.607, lng:140.103,
+ ages:["0-1歳","2-3歳","4-6歳","低学年","高学年"], weather:["晴れ"], duration:["半日"],
+ price:"入園無料", parking:"yes", access:"JR「千葉みなと」駅から徒歩10分",
+ baby:"おむつ替えトイレあり／ベビーカーOK", lunch:"園内に売店がある場合あり。周辺の飲食店と組み合わせるのがおすすめ。",
+ officialUrl:null,
+ desc:"遊具や広場のある地域の公園。天候や気分に合わせて気軽に立ち寄れる。",
+ tip:"千葉ポートタワーに隣接する海沿いの公園。"},
+{region:"千葉", name:"稲毛海浜公園", area:"千葉市美浜区", lat:35.606, lng:140.068,
+ ages:["0-1歳","2-3歳","4-6歳","低学年","高学年"], weather:["晴れ"], duration:["半日"],
+ price:"入園無料", parking:"yes", access:"JR「稲毛海岸」駅からバス",
+ baby:"おむつ替えトイレあり／ベビーカーOK", lunch:"園内に売店がある場合あり。周辺の飲食店と組み合わせるのがおすすめ。",
+ officialUrl:null,
+ desc:"遊具や広場のある地域の公園。天候や気分に合わせて気軽に立ち寄れる。",
+ tip:"人工海浜での水遊びができる公園。"},
+{region:"千葉", name:"手賀沼公園", area:"柏市", lat:35.856, lng:140.033,
+ ages:["0-1歳","2-3歳","4-6歳","低学年","高学年"], weather:["晴れ"], duration:["半日"],
+ price:"入園無料", parking:"yes", access:"JR「我孫子」駅から徒歩15分",
+ baby:"おむつ替えトイレあり／ベビーカーOK", lunch:"園内に売店がある場合あり。周辺の飲食店と組み合わせるのがおすすめ。",
+ officialUrl:null,
+ desc:"遊具や広場のある地域の公園。天候や気分に合わせて気軽に立ち寄れる。",
+ tip:"沼を望む遊歩道とサイクリングコースが人気。"},
+{region:"千葉", name:"柏の葉公園", area:"柏市", lat:35.899, lng:139.937,
+ ages:["0-1歳","2-3歳","4-6歳","低学年","高学年"], weather:["晴れ"], duration:["半日"],
+ price:"入園無料", parking:"yes", access:"つくばエクスプレス「柏の葉キャンパス」駅から徒歩10分",
+ baby:"おむつ替えトイレあり／ベビーカーOK", lunch:"園内に売店がある場合あり。周辺の飲食店と組み合わせるのがおすすめ。",
+ officialUrl:null,
+ desc:"遊具や広場のある地域の公園。天候や気分に合わせて気軽に立ち寄れる。",
+ tip:"広い芝生広場と大型遊具がある総合公園。"},
+{region:"千葉", name:"犬吠埼", area:"銚子市", lat:35.708, lng:140.869,
+ ages:["4-6歳","低学年","高学年"], weather:["晴れ"], duration:["半日"],
+ price:"入園無料", parking:"yes", access:"銚子電鉄「犬吠」駅から徒歩5分",
+ baby:"おむつ替えトイレあり／ベビーカーOK", lunch:"園内に売店がある場合あり。周辺の飲食店と組み合わせるのがおすすめ。",
+ officialUrl:null,
+ desc:"遊具や広場のある地域の公園。天候や気分に合わせて気軽に立ち寄れる。",
+ tip:"太平洋を望む岬。灯台や磯遊びも楽しめる。"},
+{region:"千葉", name:"茂原公園", area:"茂原市", lat:35.423, lng:140.282,
+ ages:["0-1歳","2-3歳","4-6歳","低学年","高学年"], weather:["晴れ"], duration:["半日"],
+ price:"入園無料", parking:"yes", access:"JR「茂原」駅から徒歩15分",
+ baby:"おむつ替えトイレあり／ベビーカーOK", lunch:"園内に売店がある場合あり。周辺の飲食店と組み合わせるのがおすすめ。",
+ officialUrl:null,
+ desc:"遊具や広場のある地域の公園。天候や気分に合わせて気軽に立ち寄れる。",
+ tip:"池のある落ち着いた雰囲気の公園。"},
+{region:"千葉", name:"房総のむら", area:"印旛郡栄町", lat:35.79, lng:140.22,
+ ages:["4-6歳","低学年","高学年"], weather:["晴れ"], duration:["半日"],
+ price:"大人300円程度／高校生以下 無料", parking:"yes", access:"JR「安食」駅からバス",
+ baby:"おむつ替えあり／ベビーカーOK", lunch:"園内に売店あり。",
+ officialUrl:null,
+ desc:"昔の町並みや農家を再現した体験型施設。伝統工芸体験なども行われる。",
+ tip:"体験プログラムは事前予約制のものもあるので公式サイトで要確認。"},
+{region:"茨城", name:"偕楽園", area:"水戸市", lat:36.376, lng:140.43,
+ ages:["0-1歳","2-3歳","4-6歳","低学年","高学年"], weather:["晴れ"], duration:["半日"],
+ price:"入園無料（好文亭は別途有料）", parking:"yes", access:"JR「偕楽園」駅（臨時）またはバス",
+ baby:"おむつ替えあり／ベビーカーOK", lunch:"隣接の千波公園に売店あり。",
+ officialUrl:null,
+ desc:"日本三名園のひとつ。梅の名所として知られ、広い園内を散策できる。",
+ tip:"隣接する千波公園と合わせて一日過ごすファミリーも多い。"},
+{region:"茨城", name:"千波公園", area:"水戸市", lat:36.366, lng:140.464,
+ ages:["0-1歳","2-3歳","4-6歳","低学年","高学年"], weather:["晴れ"], duration:["半日"],
+ price:"入園無料", parking:"yes", access:"JR「水戸」駅から徒歩15分",
+ baby:"おむつ替えトイレあり／ベビーカーOK", lunch:"園内に売店がある場合あり。周辺の飲食店と組み合わせるのがおすすめ。",
+ officialUrl:null,
+ desc:"遊具や広場のある地域の公園。天候や気分に合わせて気軽に立ち寄れる。",
+ tip:"大きな池を囲む広い公園。白鳥や噴水も見られる。"},
+{region:"茨城", name:"竜神大吊橋", area:"常陸太田市", lat:36.665, lng:140.585,
+ ages:["4-6歳","低学年","高学年"], weather:["晴れ"], duration:["半日"],
+ price:"大人320円程度", parking:"yes", access:"JR「常陸太田」駅からバス",
+ baby:"おむつ替えあり／ベビーカーOK（吊り橋は歩行のみ）", lunch:"周辺に売店あり。",
+ officialUrl:null,
+ desc:"渓谷にかかる大きな吊り橋。バンジージャンプ体験もできる観光名所。",
+ tip:"吊り橋は多少揺れるため、小さな子は手をしっかりつないで渡ると安心。"},
+{region:"茨城", name:"大洗サンビーチ", area:"東茨城郡大洗町", lat:36.305, lng:140.582,
+ ages:["0-1歳","2-3歳","4-6歳","低学年","高学年"], weather:["晴れ"], duration:["半日"],
+ price:"入園無料", parking:"yes", access:"JR「大洗」駅からバス",
+ baby:"おむつ替えトイレあり／ベビーカーOK", lunch:"園内に売店がある場合あり。周辺の飲食店と組み合わせるのがおすすめ。",
+ officialUrl:null,
+ desc:"遊具や広場のある地域の公園。天候や気分に合わせて気軽に立ち寄れる。",
+ tip:"水族館にも近い海水浴場。夏は海遊びが楽しめる。"},
+{region:"茨城", name:"笠間芸術の森公園", area:"笠間市", lat:36.361, lng:140.286,
+ ages:["0-1歳","2-3歳","4-6歳","低学年","高学年"], weather:["晴れ"], duration:["半日"],
+ price:"入園無料", parking:"yes", access:"JR「笠間」駅からバス",
+ baby:"おむつ替えトイレあり／ベビーカーOK", lunch:"園内に売店がある場合あり。周辺の飲食店と組み合わせるのがおすすめ。",
+ officialUrl:null,
+ desc:"遊具や広場のある地域の公園。天候や気分に合わせて気軽に立ち寄れる。",
+ tip:"陶芸美術館も隣接する広い公園。"},
+{region:"茨城", name:"筑波山", area:"つくば市", lat:36.226, lng:140.105,
+ ages:["4-6歳","低学年","高学年"], weather:["晴れ"], duration:["半日"],
+ price:"入園無料", parking:"yes", access:"つくばエクスプレス「つくば」駅からバス",
+ baby:"おむつ替えトイレあり／ベビーカーOK", lunch:"園内に売店がある場合あり。周辺の飲食店と組み合わせるのがおすすめ。",
+ officialUrl:null,
+ desc:"遊具や広場のある地域の公園。天候や気分に合わせて気軽に立ち寄れる。",
+ tip:"ケーブルカーやロープウェイで幼児でも山頂へ行きやすい。"},
+{region:"栃木", name:"とちぎわんぱく公園（栃木県子ども総合科学館）", area:"真岡市", lat:36.452, lng:139.98,
+ ages:["0-1歳","2-3歳","4-6歳","低学年"], weather:["晴れ","雨"], duration:["半日"],
+ price:"公園無料／科学館は大人510円程度", parking:"yes", access:"JR「宝積寺」駅からバス",
+ baby:"おむつ替え・授乳室あり／ベビーカーOK", lunch:"園内にレストランあり。",
+ officialUrl:null,
+ desc:"屋外の大型遊具広場と屋内の科学館が一体になった県立の施設。",
+ tip:"屋内外どちらも楽しめるので天候が読めない日の行き先にも向く。"},
+{region:"栃木", name:"宇都宮動物園", area:"宇都宮市", lat:36.53, lng:139.92,
+ ages:["0-1歳","2-3歳","4-6歳","低学年","高学年"], weather:["晴れ"], duration:["半日","1日"],
+ price:"大人1200円台（乗り物別途）", parking:"yes", access:"JR「宇都宮」駅からバス",
+ baby:"おむつ替えあり／ベビーカーOK", lunch:"園内にレストラン・売店あり。",
+ officialUrl:null,
+ desc:"動物園と小さな遊園地が一体になったファミリー向け施設。",
+ tip:"乗り物の種類が幼児向けに充実しており、家族全員で楽しみやすい。"},
+{region:"栃木", name:"那須フラワーワールド", area:"那須郡那須町", lat:37.01, lng:140.1,
+ ages:["0-1歳","2-3歳","4-6歳","低学年","高学年"], weather:["晴れ"], duration:["半日"],
+ price:"入園無料", parking:"yes", access:"JR「黒磯」駅からバス",
+ baby:"おむつ替えトイレあり／ベビーカーOK", lunch:"園内に売店がある場合あり。周辺の飲食店と組み合わせるのがおすすめ。",
+ officialUrl:null,
+ desc:"遊具や広場のある地域の公園。天候や気分に合わせて気軽に立ち寄れる。",
+ tip:"季節の花畑が広がる高原の花のテーマパーク。"},
+{region:"栃木", name:"井頭公園", area:"真岡市", lat:36.446, lng:139.972,
+ ages:["0-1歳","2-3歳","4-6歳","低学年","高学年"], weather:["晴れ"], duration:["半日"],
+ price:"入園無料", parking:"yes", access:"JR「宝積寺」駅からバス",
+ baby:"おむつ替えトイレあり／ベビーカーOK", lunch:"園内に売店がある場合あり。周辺の飲食店と組み合わせるのがおすすめ。",
+ officialUrl:null,
+ desc:"遊具や広場のある地域の公園。天候や気分に合わせて気軽に立ち寄れる。",
+ tip:"池を中心にした広い公園で動物とのふれあいコーナーもある。"},
+{region:"栃木", name:"中禅寺湖・華厳の滝", area:"日光市", lat:36.737, lng:139.488,
+ ages:["4-6歳","低学年","高学年"], weather:["晴れ"], duration:["半日","1日"],
+ price:"華厳の滝エレベーター 大人570円程度", parking:"yes", access:"東武バス「中禅寺温泉」下車",
+ baby:"おむつ替えあり／ベビーカーOK（遊歩道は一部坂道）", lunch:"周辺に飲食店あり。",
+ officialUrl:null,
+ desc:"湖畔散策と迫力ある滝の眺めが楽しめる日光の定番観光地。",
+ tip:"エレベーターで滝つぼ展望台まで行けるので小さな子でも見学しやすい。"},
+{region:"群馬", name:"高崎公園", area:"高崎市", lat:36.318, lng:139.005,
+ ages:["0-1歳","2-3歳","4-6歳","低学年","高学年"], weather:["晴れ"], duration:["半日"],
+ price:"入園無料", parking:"yes", access:"JR「高崎」駅から徒歩15分",
+ baby:"おむつ替えトイレあり／ベビーカーOK", lunch:"園内に売店がある場合あり。周辺の飲食店と組み合わせるのがおすすめ。",
+ officialUrl:null,
+ desc:"遊具や広場のある地域の公園。天候や気分に合わせて気軽に立ち寄れる。",
+ tip:"動物ふれあいコーナーもある市街地の公園。"},
+{region:"群馬", name:"伊香保グリーン牧場", area:"渋川市", lat:36.49, lng:138.933,
+ ages:["0-1歳","2-3歳","4-6歳","低学年"], weather:["晴れ"], duration:["半日","1日"],
+ price:"大人1300円台／子供700円台", parking:"yes", access:"JR「渋川」駅からバス",
+ baby:"おむつ替えあり／ベビーカーOK（起伏あり）", lunch:"園内にレストラン・売店あり。",
+ officialUrl:null,
+ desc:"羊やヤギとのふれあい体験が楽しめる高原の牧場。犬のショーなども開催。",
+ tip:"標高が高く夏でも涼しいので、避暑を兼ねたお出かけにも向く。"},
+{region:"群馬", name:"太田市運動公園", area:"太田市", lat:36.296, lng:139.372,
+ ages:["0-1歳","2-3歳","4-6歳","低学年","高学年"], weather:["晴れ"], duration:["半日"],
+ price:"入園無料", parking:"yes", access:"東武線「太田」駅からバス",
+ baby:"おむつ替えトイレあり／ベビーカーOK", lunch:"園内に売店がある場合あり。周辺の飲食店と組み合わせるのがおすすめ。",
+ officialUrl:null,
+ desc:"遊具や広場のある地域の公園。天候や気分に合わせて気軽に立ち寄れる。",
+ tip:"大型遊具のある広い運動公園。"},
+{region:"群馬", name:"敷島公園", area:"前橋市", lat:36.403, lng:139.043,
+ ages:["0-1歳","2-3歳","4-6歳","低学年","高学年"], weather:["晴れ"], duration:["半日"],
+ price:"入園無料", parking:"yes", access:"JR「前橋」駅からバス",
+ baby:"おむつ替えトイレあり／ベビーカーOK", lunch:"園内に売店がある場合あり。周辺の飲食店と組み合わせるのがおすすめ。",
+ officialUrl:null,
+ desc:"遊具や広場のある地域の公園。天候や気分に合わせて気軽に立ち寄れる。",
+ tip:"バラ園とスポーツ施設がそろう緑豊かな公園。"},
+{region:"群馬", name:"ぐんま昆虫の森", area:"桐生市", lat:36.446, lng:139.368,
+ ages:["2-3歳","4-6歳","低学年","高学年"], weather:["晴れ"], duration:["半日"],
+ price:"大人510円程度／中学生以下 無料", parking:"yes", access:"わたらせ渓谷鐵道「大間々」駅からバス",
+ baby:"おむつ替えあり／ベビーカーOK", lunch:"園内にレストランあり。",
+ officialUrl:null,
+ desc:"里山の中で昆虫観察ができる自然体験施設。温室では蝶の飼育展示もある。",
+ tip:"夏は昆虫が多く観察できるが虫よけ対策をしていくと快適。"},
+];
+
+let state = {
+  ages:new Set(), weather:"all", duration:"all", parking:"all", dist:"all",
+  favOnly:false, hideVisited:false, showExcluded:false,
+  favorites:new Set(), visited:new Set(), excluded:new Set(),
+  homeLoc:null, filtersOpen:false
+};
+
+function loadPersisted(){
+  try{
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if(!raw) return null;
+    return JSON.parse(raw);
+  }catch(e){ return null; }
+}
+function savePersisted(){
+  try{
+    const zipInput = document.getElementById("zipInput");
+    const zipStatus = document.getElementById("zipStatus");
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({
+      favorites:[...state.favorites],
+      visited:[...state.visited],
+      excluded:[...state.excluded],
+      homeLoc: state.homeLoc,
+      zipRaw: zipInput ? zipInput.value : "",
+      zipLabel: zipStatus ? zipStatus.textContent : ""
+    }));
+  }catch(e){ /* localStorage unavailable (e.g. private browsing) - continue without saving */ }
+}
+function applyPersisted(p){
+  if(!p) return;
+  state.favorites = new Set(p.favorites||[]);
+  state.visited = new Set(p.visited||[]);
+  state.excluded = new Set(p.excluded||[]);
+  if(p.homeLoc) state.homeLoc = p.homeLoc;
+}
+
+function haversineKm(lat1,lng1,lat2,lng2){
+  const R=6371, toRad=d=>d*Math.PI/180;
+  const dLat=toRad(lat2-lat1), dLng=toRad(lng2-lng1);
+  const a=Math.sin(dLat/2)**2+Math.cos(toRad(lat1))*Math.cos(toRad(lat2))*Math.sin(dLng/2)**2;
+  return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
+}
+function estimateMinutes(km){
+  if(km<=15) return km/25*60;
+  return (15/25*60) + (km-15)/55*60;
+}
+
+function buildChips(containerId, items, isActive, onClick, extraClass){
+  const el = document.getElementById(containerId);
+  el.innerHTML = "";
+  items.forEach(item=>{
+    const c = document.createElement("div");
+    c.className = "chip" + (extraClass ? extraClass(item) : "") + (isActive(item) ? " active" : "");
+    c.textContent = item.label;
+    c.onclick = ()=>{ onClick(item); render(); };
+    el.appendChild(c);
+  });
+}
+
+function buildAgeChips(){
+  const el = document.getElementById("ageChips");
+  el.innerHTML = "";
+  AGES.forEach(age=>{
+    const c = document.createElement("div");
+    c.className = "chip" + (state.ages.has(age) ? " active" : "");
+    c.textContent = age;
+    c.onclick = ()=>{
+      if(state.ages.has(age)) state.ages.delete(age); else state.ages.add(age);
+      render();
+    };
+    el.appendChild(c);
+  });
+}
+function buildWeatherChips(){
+  buildChips("weatherChips", WEATHERS, w=>state.weather===w.key, w=>state.weather=w.key,
+    w=>w.key==="晴れ"?" w-sun":w.key==="雨"?" w-rain":" w-both");
+}
+function buildDurationChips(){
+  buildChips("durationChips", DURATIONS, d=>state.duration===d.key, d=>state.duration=d.key);
+}
+function buildParkingChips(){
+  buildChips("parkingChips", PARKINGS, p=>state.parking===p.key, p=>state.parking=p.key,
+    p=>p.key==="yes" ? " p-yes" : "");
+}
+function buildDistChips(){
+  buildChips("distChips", DISTS, d=>state.dist===d.key, d=>state.dist=d.key);
+}
+function buildViewChips(){
+  const el = document.getElementById("viewChips");
+  el.innerHTML = "";
+  VIEWS.forEach(v=>{
+    const c = document.createElement("div");
+    const active = v.key==="favOnly"?state.favOnly : v.key==="hideVisited"?state.hideVisited : state.showExcluded;
+    c.className = "chip" + (v.key==="favOnly"?" fav":"") + (active ? " active" : "");
+    c.textContent = v.label;
+    c.onclick = ()=>{
+      if(v.key==="favOnly") state.favOnly = !state.favOnly;
+      else if(v.key==="hideVisited") state.hideVisited = !state.hideVisited;
+      else state.showExcluded = !state.showExcluded;
+      render(); // render() が buildViewChips() も呼ぶため個別呼び出しは不要
+    };
+    el.appendChild(c);
+  });
+}
+
+function countActiveFilters(){
+  let n = 0;
+  if(state.ages.size>0) n++;
+  if(state.weather!=="all") n++;
+  if(state.duration!=="all") n++;
+  if(state.parking!=="all") n++;
+  if(state.dist!=="all" && state.homeLoc) n++;
+  if(state.favOnly) n++;
+  if(state.hideVisited) n++;
+  return n;
+}
+function updateFiltersSummary(){
+  const n = countActiveFilters();
+  document.getElementById("filtersSummary").textContent = n>0 ? `（${n}件 適用中）` : "";
+}
+
+document.getElementById("filtersToggle").onclick = ()=>{
+  state.filtersOpen = !state.filtersOpen;
+  const toggle = document.getElementById("filtersToggle");
+  const body = document.getElementById("filtersBody");
+  toggle.classList.toggle("open", state.filtersOpen);
+  body.classList.toggle("open", state.filtersOpen);
+};
+
+document.getElementById("resetBtn").onclick = ()=>{
+  try{ localStorage.removeItem(STORAGE_KEY); }catch(e){}
+  // 保存データ(お気に入り/行った/除外/郵便番号)だけでなく、
+  // 画面上の絞り込み条件(年齢・天気・所要時間・駐車場・距離・表示切替)も全てリセットする
+  state.ages = new Set();
+  state.weather = "all";
+  state.duration = "all";
+  state.parking = "all";
+  state.dist = "all";
+  state.favOnly = false;
+  state.hideVisited = false;
+  state.showExcluded = false;
+  state.favorites = new Set();
+  state.visited = new Set();
+  state.excluded = new Set();
+  state.homeLoc = null;
+  document.getElementById("zipInput").value = "";
+  document.getElementById("zipStatus").textContent = "";
+  document.getElementById("distChips").style.display = "none";
+  render();
+};
+
+document.getElementById("zipBtn").onclick = ()=>{
+  const raw = document.getElementById("zipInput").value.replace(/[^0-9]/g,"");
+  const statusEl = document.getElementById("zipStatus");
+  if(raw.length!==7){ statusEl.textContent = "7桁の郵便番号を入力してください（例：1000001）"; return; }
+  // 上3桁マスタと照合（通信不要・関東エリアの市区町村レベルの概算地点で判定）
+  const code3 = raw.slice(0,3);
+  const hit = lookupZip3(code3);
+  if(!hit){
+    statusEl.textContent = "対応エリア外の郵便番号です（関東地方の郵便番号をご入力ください）";
+    return;
+  }
+  state.homeLoc = {lat:hit.lat, lng:hit.lng};
+  statusEl.textContent = `${hit.label} 付近を起点に距離を計算しました（郵便番号の上3桁による概算）`;
+  document.getElementById("distChips").style.display = "flex";
+  savePersisted();
+  render();
+};
+
+function matches(spot){
+  if(state.ages.size>0 && !spot.ages.some(a=>state.ages.has(a))) return false;
+  if(state.weather!=="all" && !spot.weather.includes(state.weather)) return false;
+  if(state.duration!=="all" && !spot.duration.includes(state.duration)) return false;
+  if(state.parking!=="all" && spot.parking!==state.parking) return false;
+  if(state.homeLoc && state.dist!=="all"){
+    const km = haversineKm(state.homeLoc.lat,state.homeLoc.lng,spot.lat,spot.lng);
+    const min = estimateMinutes(km);
+    if(state.dist==="30" && min>30) return false;
+    if(state.dist==="60" && min>60) return false;
+  }
+  if(state.favOnly && !state.favorites.has(spot.name)) return false;
+  if(state.hideVisited && state.visited.has(spot.name)) return false;
+  if(!state.showExcluded && state.excluded.has(spot.name)) return false;
+  return true;
+}
+
+function weatherClass(spot){
+  if(spot.weather.includes("晴れ") && spot.weather.includes("雨")) return "";
+  if(spot.weather.includes("晴れ")) return "w-晴れ";
+  if(spot.weather.includes("雨")) return "w-雨";
+  return "";
+}
+function weatherIcon(spot){
+  const both = spot.weather.includes("晴れ") && spot.weather.includes("雨");
+  if(both) return "☀️☔";
+  if(spot.weather.includes("晴れ")) return "☀️";
+  return "☔";
+}
+function mapsUrl(spot){
+  return "https://www.google.com/maps/search/?api=1&query=" + encodeURIComponent(spot.name + " " + spot.area);
+}
+function officialLink(spot){
+  return spot.officialUrl || ("https://www.google.com/search?q=" + encodeURIComponent(spot.name + " 公式"));
+}
+function officialLabel(spot){
+  return spot.officialUrl ? "公式HP" : "公式HPを検索";
+}
+
+function toggleSet(setName, name){
+  const s = state[setName];
+  if(s.has(name)) s.delete(name); else s.add(name);
+  savePersisted();
+  render();
+}
+
+function render(){
+  // フィルターチップは常にここで再構築し、state と表示(active/反転)を必ず一致させる
+  buildAgeChips();
+  buildWeatherChips();
+  buildDurationChips();
+  buildParkingChips();
+  buildDistChips();
+  buildViewChips();
+  updateFiltersSummary();
+  const main = document.getElementById("main");
+  main.innerHTML = "";
+  const filtered = SPOTS.filter(matches);
+  document.getElementById("resultCount").innerHTML =
+    `<b>${filtered.length}</b> / ${SPOTS.length} スポット`;
+
+  if(filtered.length===0){
+    main.innerHTML = `<div class="empty">条件に合うスポットが見つかりません。<br>絞り込みを減らしてみてください。</div>`;
+    return;
+  }
+
+  if(state.homeLoc){
+    const sorted = [...filtered].sort((a,b)=>
+      haversineKm(state.homeLoc.lat,state.homeLoc.lng,a.lat,a.lng) -
+      haversineKm(state.homeLoc.lat,state.homeLoc.lng,b.lat,b.lng)
+    );
+    const cardsWrap = document.createElement("div");
+    cardsWrap.className = "cards";
+    sorted.forEach(spot=>cardsWrap.appendChild(buildCard(spot)));
+    const sec = document.createElement("section");
+    sec.className = "region";
+    sec.innerHTML = `<div class="region-title"><h2>自宅から近い順</h2><span class="count">${sorted.length}件</span></div>`;
+    sec.appendChild(cardsWrap);
+    main.appendChild(sec);
+    return;
+  }
+
+  const regions = [...new Set(filtered.map(s=>s.region))];
+  const regionOrder = ["東京","神奈川","埼玉","千葉","茨城","栃木","群馬"];
+  regions.sort((a,b)=>regionOrder.indexOf(a)-regionOrder.indexOf(b));
+
+  regions.forEach(region=>{
+    const spots = filtered.filter(s=>s.region===region);
+    const sec = document.createElement("section");
+    sec.className = "region";
+    sec.innerHTML = `<div class="region-title"><h2>${region}</h2><span class="count">${spots.length}件</span></div>`;
+    const cardsWrap = document.createElement("div");
+    cardsWrap.className = "cards";
+    spots.forEach(spot=>cardsWrap.appendChild(buildCard(spot)));
+    sec.appendChild(cardsWrap);
+    main.appendChild(sec);
+  });
+}
+
+function buildCard(spot){
+  const card = document.createElement("div");
+  const isVisited = state.visited.has(spot.name);
+  card.className = "card " + weatherClass(spot) + (isVisited ? " is-visited" : "");
+  const ageTagsHtml = spot.ages.map(a=>
+    `<span class="tag ${state.ages.has(a)?"age-hit":""}">${a}</span>`
+  ).join("");
+  const durationLabel = spot.duration.includes("1日") && !spot.duration.includes("半日") ? "1日"
+    : spot.duration.includes("半日") && !spot.duration.includes("1日") ? "半日"
+    : "半日〜1日";
+  const durationClass = spot.duration.includes("1日") ? "full" : "";
+  const parkingLabel = spot.parking==="yes" ? "あり" : "なし・少なめ";
+  let distHtml = "";
+  if(state.homeLoc){
+    const km = haversineKm(state.homeLoc.lat,state.homeLoc.lng,spot.lat,spot.lng);
+    const min = Math.round(estimateMinutes(km));
+    distHtml = `<div class="card-dist">🚗 自宅から車で約${min}分・${Math.round(km)}km（目安）</div>`;
+  }
+  const isFav = state.favorites.has(spot.name);
+  const isExcluded = state.excluded.has(spot.name);
+  card.innerHTML = `
+    <div class="card-top">
+      <div>
+        <div class="card-name">${spot.name}</div>
+        <div class="card-area">${spot.area}</div>
+        ${distHtml}
+      </div>
+      <div class="duration-tag ${durationClass}">${durationLabel}</div>
+    </div>
+    <div class="card-desc">${spot.desc}</div>
+    <div class="tag-row">${ageTagsHtml}<span class="tag weather-icons">${weatherIcon(spot)}</span></div>
+    <div class="info-grid">
+      <div class="info-row"><span class="ico">💰</span><span class="lbl">料金</span><span class="val">${spot.price}</span></div>
+      <div class="info-row"><span class="ico">🅿️</span><span class="lbl">駐車場</span><span class="val">${parkingLabel}</span></div>
+      <div class="info-row"><span class="ico">🚉</span><span class="lbl">アクセス</span><span class="val">${spot.access}</span></div>
+      <div class="info-row"><span class="ico">🍼</span><span class="lbl">赤ちゃん</span><span class="val">${spot.baby}</span></div>
+      <div class="info-row"><span class="ico">🍴</span><span class="lbl">食事</span><span class="val">${spot.lunch}</span></div>
+    </div>
+    <div class="tip"><b>ひとこと：</b>${spot.tip}</div>
+    <div class="action-row">
+      <button class="abtn ${isFav?"on":""}" data-act="fav">⭐ お気に入り</button>
+      <button class="abtn ${isVisited?"on visited":""}" data-act="visited">✅ 行った</button>
+      <button class="abtn ${isExcluded?"on excluded":""}" data-act="exclude">🚫 除外</button>
+      <a class="abtn link" href="${mapsUrl(spot)}" target="_blank" rel="noopener">🗺️ Googleマップ</a>
+      <a class="abtn link" href="${officialLink(spot)}" target="_blank" rel="noopener">🔗 ${officialLabel(spot)}</a>
+    </div>
+  `;
+  card.querySelector('[data-act="fav"]').onclick = ()=>toggleSet("favorites", spot.name);
+  card.querySelector('[data-act="visited"]').onclick = ()=>toggleSet("visited", spot.name);
+  card.querySelector('[data-act="exclude"]').onclick = ()=>toggleSet("excluded", spot.name);
+  return card;
+}
+
+// init
+const persisted = loadPersisted(); // localStorageの読み込みは1回だけ行い、使い回す
+applyPersisted(persisted);
+if(persisted && persisted.zipRaw) document.getElementById("zipInput").value = persisted.zipRaw;
+if(persisted && persisted.zipLabel) document.getElementById("zipStatus").textContent = persisted.zipLabel;
+if(state.homeLoc) document.getElementById("distChips").style.display = "flex";
+render(); // render() が全チップ(年齢・天気・所要時間・駐車場・距離・表示)と一覧を初期描画する
+</script>
+</body>
+</html>
