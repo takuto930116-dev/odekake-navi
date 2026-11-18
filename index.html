@@ -36,7 +36,7 @@ button:active{transform:scale(.96)}
 .tabs button{height:38px;font-size:15px;font-weight:800}
 .tabs button.on{background:var(--ac);color:#fff;border-color:var(--ac)}
 .sum{display:flex;flex-direction:row;gap:6px;padding:6px}
-.sum>div{flex:1;background:var(--bg);border-radius:10px;padding:3px 8px;font-size:11px;color:var(--mut);min-width:0}
+.sum>div{overflow:hidden;flex:1;background:var(--bg);border-radius:10px;padding:3px 8px;font-size:11px;color:var(--mut);min-width:0}
 .sum b{display:block;font-size:clamp(20px,3.4vh,28px);color:var(--tx);line-height:1.15;white-space:nowrap}
 .sum .t{flex:1.2}.sum .t b{color:var(--ac)}
 .sum .c b{color:var(--ac2)}.sum .c.bad b{color:var(--bad)}
@@ -169,6 +169,8 @@ function renderHist(){
   h+='<div class="hr"><span class="no">'+l.tag+'</span><div class="ds">'+desc(l)+'<small>'+yen(l.t)+'（預かり'+yen(l.r)+'）</small></div>'+
   '<button class="'+(l.d?'':'w')+'" onclick="toggleD('+i+')">'+(l.d?'渡済 ✓':'渡す')+'</button></div>'}
  document.getElementById("hlist").innerHTML=h||'<div class="empty">該当なし</div>'}
+function fit(el){var s=el.textContent,e=0;for(var i=0;i<s.length;i++){var ch=s.charAt(i);e+=ch==="円"?1.1:ch===","?0.45:0.75}var w=el.parentElement.clientWidth-24;el.style.fontSize=Math.max(10,Math.min(26,Math.floor(w/(e||1))))+"px"}
+window.addEventListener("resize",function(){render(true)});
 function render(keepSet){
  document.getElementById("tag").textContent=S.tag;
  document.getElementById("items").innerHTML=S.items.map(function(i,k){
@@ -181,6 +183,7 @@ function render(keepSet){
  var c=document.getElementById("chgRow");
  c.className="c"+(ch<0&&t>0?" bad":"");
  c.innerHTML=(ch<0&&t>0?"不足":"おつり")+"<b>"+yen(t>0?Math.abs(ch):0)+"</b>";
+ fit(document.getElementById("total"));fit(document.getElementById("recv"));fit(c.querySelector("b"));
  document.getElementById("go").disabled=!(t>0&&S.recv>=t);
  var sales=0,w=0,dn=0;
  S.log.forEach(function(l){sales+=l.t;if(l.d)dn++;else w++});
